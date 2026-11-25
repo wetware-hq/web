@@ -118,8 +118,11 @@ def shapes(d_in, d_out, hidden):
 
 def pack(grid, d_out, hidden, omega0, params):
     """Serialize a web to its canonical bytes. `params` is [W1, b1, W2, b2, W3, b3]."""
-    head = MAGIC + struct.pack("<BHB", ACT_SINE, omega0, len(grid))
-    head += struct.pack("<" + "H" * len(grid), *grid) + struct.pack("<BHB", d_out, hidden, DTYPE_F16)
+    try:
+        head = MAGIC + struct.pack("<BHB", ACT_SINE, omega0, len(grid))
+        head += struct.pack("<" + "H" * len(grid), *grid) + struct.pack("<BHB", d_out, hidden, DTYPE_F16)
+    except struct.error:
+        raise Refusal("bad_header", "field out of range")
     body = b""
     for p, s in zip(params, shapes(len(grid), d_out, hidden)):
         q = np.asarray(p, dtype=np.float64).reshape(s).astype("<f2")
@@ -128,8 +131,7 @@ def pack(grid, d_out, hidden, omega0, params):
             raise Refusal("bad_weight", "weight overflows float16")
         body += q.tobytes()
     blob = head + body
-    if len(blob) > MAX_BYTES:
-        raise Refusal("too_large", f"{len(blob)} bytes")
+    unpack(blob)
     return blob
 
 
