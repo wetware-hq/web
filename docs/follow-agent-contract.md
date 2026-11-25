@@ -30,6 +30,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
 ## Composition
 
 ```toml { type: notebook.cell }
+format = "web.md"              # the .web file format: extension, media type, magic
 store = "*.web"                # canonical bytes, §2
 pins = "web.json"              # sample roots, fidelity and chain
 index = "ooc/web.og"           # ObjectGraph traversal index

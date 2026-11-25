@@ -5,7 +5,7 @@ updated: 2026-11-26
 domain: web|shallow-nn|universal-approximator|media|on-chain
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:4cfe13d104903acd2951547673c7e12d0881b4876b1103afb2ca58b7d2a8f1b1
+checksum: sha256:547d5c34b44e1f45e433aa47fa9c3d0a557bef418d9960c34eff0a06b2adbeeb
 ::end
 
 ::schema
@@ -17,7 +17,7 @@ scope-levels: [all, encoder, decoder, committer]
 ::index
 # id | type | scope | conf | keywords
 banner | meta | all | 1.00 | academic, lossy, not-provenance
-contract | stage | all | 1.00 | web1, bytes, decode, root, refusals, fidelity, deep-net-form, W1-W8
+contract | stage | all | 1.00 | .web, web1, bytes, decode, root, refusals, fidelity, deep-net-form, W1-W8
 pins | stage | all | 1.00 | cybenko-1989, hornik-1991, siren, coin, functa, dwsnets, astronaut@88431cd9
 cyber | stage | all | 0.50 | receptive-field, sinusoid-basis, closed-loop, hypothesis
 encode | skill | encoder | 1.00 | sine-2x64, adam, binary16, seed, not-normative
@@ -48,6 +48,7 @@ Load docs/follow-agent-contract.md.
 ::end
 ::edges
 ->[:requires] docs/follow-agent-contract.md
+->[:requires] web.md
 ->[:precedes] pins
 ->[:precedes] encode
 ->[:precedes] decode

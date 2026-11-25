@@ -28,6 +28,7 @@ Read `DISCLAIMER` before any node. Then take the first row that covers the task 
 
 | Task | Path |
 |---|---|
+| Know what a `.web` file is | `web.md` |
 | Turn an image into a web | contract → `skills/encode-media.md` |
 | Turn a web back into an image | contract §3 → `skills/decode-web.md` |
 | Check a web file or its claimed fidelity | contract §5–§7 → `skills/decode-web.md` §Check |

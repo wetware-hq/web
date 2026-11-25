@@ -6,7 +6,7 @@
 
 ## What is this?
 
-A **web** is one image saved as the weights of a small neural network instead of as pixels. The network has two hidden layers of 64 sine units. Give it a pixel's position and it returns that pixel's colour. Run it over every position and you get the image back.
+A **web** (a `.web` file, defined in [`web.md`](web.md)) is one image saved as the weights of a small neural network instead of as pixels. The network has two hidden layers of 64 sine units. Give it a pixel's position and it returns that pixel's colour. Run it over every position and you get the image back.
 
 This works because of the **universal approximation theorem**: a network of this shape can approximate any reasonable image as closely as you like, given enough units. So one fixed design can hold any image.
 
@@ -44,6 +44,7 @@ The full byte layout, decoder and error codes are in [`docs/follow-agent-contrac
 | Path | What it covers |
 |---|---|
 | [`DISCLAIMER`](DISCLAIMER) | The one-line notice. Agents read it first. |
+| [`web.md`](web.md) | The `.web` file format: extension, media type, magic and axioms. |
 | [`docs/read-repository.md`](docs/read-repository.md) | Where to start: which file to read for which task. |
 | [`docs/follow-agent-contract.md`](docs/follow-agent-contract.md) | The rulebook: bytes, decoder, root, error codes and checks. It wins if files disagree. |
 | [`docs/pin-sources.md`](docs/pin-sources.md) | The theorems, papers and sample image, each pinned. |
