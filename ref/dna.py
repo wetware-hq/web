@@ -243,6 +243,10 @@ def unpool(reads, file_id=0):
             got.setdefault(o[1], []).append(o[2])
     if not got:
         raise web.Refusal("gap", f"no valid oligo for file {file_id}")
+    idx = sorted(got)
+    ends = [-1] + [a for a, b in zip(idx, idx[1:]) if b - a > SEG_NT // STEP_NT]
+    if idx[0] or len(ends) > 1:
+        raise web.Refusal("gap", f"no oligo covers base {0 if idx[0] else ends[1] * STEP_NT + SEG_NT}")
     n = max(got) * STEP_NT + SEG_NT
     lut = np.full(256, 0, np.int64)
     for k, b in enumerate(BASES):

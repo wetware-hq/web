@@ -235,6 +235,15 @@ class Pool(unittest.TestCase):
         c = next(b for b in dna.BASES if b not in (o[j - 1], o[j], o[j + 1]))
         self.refused([o[:j] + c + o[j + 1 :]] + self.oligos[1:], "tie")
 
+    def test_far_index_is_a_gap(self):
+        o = self.oligos[0]
+        f = o[1 : 1 + dna.SEG_NT]
+        ix = dna.trits(0, dna.FILE_TRITS) + dna.trits(3**dna.INDEX_TRITS - 1, dna.INDEX_TRITS)
+        core = f + dna.rotate(ix + [dna.parity(ix)], f[-1])
+        far = ("T" if core[0] == "A" else "A") + core + ("G" if core[-1] == "C" else "C")
+        self.assertEqual(dna.read_oligo(far)[1], 3**dna.INDEX_TRITS - 1)
+        self.refused(self.oligos + [far], "gap")
+
     def test_cli(self):
         with tempfile.TemporaryDirectory() as d:
             p, back = os.path.join(d, "p.fa"), os.path.join(d, "s.fa")
