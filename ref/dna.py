@@ -232,6 +232,8 @@ def unpool(reads, file_id=0):
 
     Returns (seq, used, dropped): reads that fail an oligo check are dropped, never repaired.
     """
+    if not 0 <= file_id < 3**FILE_TRITS:
+        raise web.Refusal("bad_file", f"file id {file_id} is not 0-{3**FILE_TRITS - 1}")
     got, dropped = {}, 0
     for r in reads:
         o = read_oligo(r)

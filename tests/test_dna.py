@@ -221,9 +221,10 @@ class Pool(unittest.TestCase):
         reads = self.oligos + dna.pool(other, 8)
         self.assertEqual(dna.unpool(reads, 8)[0], other)
         self.assertEqual(self.unpooled(reads), self.seq)
-        with self.assertRaises(web.Refusal) as ctx:
-            dna.pool(other, 9)
-        self.assertEqual(ctx.exception.code, "bad_file")
+        for f in (dna.pool, dna.unpool):
+            with self.assertRaises(web.Refusal) as ctx:
+                f(other if f is dna.pool else reads, 9)
+            self.assertEqual(ctx.exception.code, "bad_file")
 
     def test_refusals(self):  # D11
         self.refused([], "gap")
