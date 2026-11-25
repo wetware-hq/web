@@ -259,7 +259,7 @@ def unpool(reads, file_id=0):
     top = votes.max(1)
     if (top == 0).any():
         raise web.Refusal("gap", f"no oligo covers base {int(np.argmin(top))}")
-    tied = ((votes == top[:, None]).sum(1) > 1).nonzero()[0]
+    tied = (2 * top <= votes.sum(1)).nonzero()[0]
     if len(tied):
         raise web.Refusal("tie", f"base {int(tied[0])}")
     s5 = "".join(BASES[k] for k in votes.argmax(1))

@@ -244,6 +244,25 @@ class Pool(unittest.TestCase):
         self.assertEqual(dna.read_oligo(far)[1], 3**dna.INDEX_TRITS - 1)
         self.refused(self.oligos + [far], "gap")
 
+    def test_plurality_is_not_majority(self):
+        p = 60
+        true = self.seq[p]
+        reads = [self.oligos[0]] + list(self.oligos)
+
+        def sub(i, b):
+            o = self.oligos[i]
+            j = 1 + (p - i * dna.STEP_NT if i % 2 == 0 else dna.SEG_NT - 1 - (p - i * dna.STEP_NT))
+            c = b if i % 2 == 0 else dna.revcomp(b)
+            return None if c in (o[j - 1], o[j + 1]) else o[:j] + c + o[j + 1 :]
+
+        for b1 in dna.BASES:
+            for b2 in dna.BASES:
+                if len({true, b1, b2}) == 3 and sub(1, b1) and sub(2, b2):
+                    reads[2], reads[3] = sub(1, b1), sub(2, b2)
+                    self.refused(reads, "tie")
+                    return
+        self.fail("no substitution pair")
+
     def test_cli(self):
         with tempfile.TemporaryDirectory() as d:
             p, back = os.path.join(d, "p.fa"), os.path.join(d, "s.fa")

@@ -224,7 +224,7 @@ unpool(reads, id):
 
 - **Shape.** Each base of `s5` is in 4 oligos, fewer within 75 bases of either end and only 1 in the first and last 25. The 50,105-nt sample becomes 2,002 oligos (234,234 nt, 4.67× the strand). Oligo GC is 0.3846–0.6068 and no oligo repeats a base. GC per oligo is reported, not enforced.
 - **Survives.** Any read order, either strand, foreign reads and reads from other file ids, the loss of interior oligos while every base stays covered, and substitutions outvoted by the other copies.
-- **Refuses, never guesses.** A base covered by no valid read is `gap`. A base whose valid reads disagree with no majority is `tie`. A sequence that fails §9 afterwards is still refused by `decipher`. The first and last 25 bases are in one oligo each, so losing oligo 0 is `gap` and losing the last oligo is `bad_pool`.
+- **Refuses, never guesses.** A base covered by no valid read is `gap`. A base whose valid reads disagree with no strict majority (more than half) is `tie`. A sequence that fails §9 afterwards is still refused by `decipher`. The first and last 25 bases are in one oligo each, so losing oligo 0 is `gap` and losing the last oligo is `bad_pool`.
 - **Parity is weak, as in the source.** `P` sees only 7 of the 14 index trits, so some index errors pass. A misplaced payload is usually outvoted; an index past the end makes the pool refuse.
 
 | Id | Predicate |
