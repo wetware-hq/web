@@ -17,6 +17,7 @@ MAGIC = b"web1"
 ACT_SINE = 1
 DTYPE_F16 = 1
 MAX_BYTES = 64 * 1024
+DECODE_ROWS = 4096  # grid points per forward pass, bounding decode memory
 
 
 class Refusal(Exception):
@@ -205,8 +206,11 @@ def to_levels(y):
 def decode(blob):
     """Expand a web into media: uint8 array of shape grid + (channels,), computed in float64."""
     w = unpack(blob)
-    y = forward(coords(w["grid"]), w["params"], w["omega0"])
-    return to_levels(y).reshape(*w["grid"], w["d_out"])
+    x = coords(w["grid"])
+    out = np.empty((len(x), w["d_out"]), dtype=np.uint8)
+    for i in range(0, len(x), DECODE_ROWS):
+        out[i : i + DECODE_ROWS] = to_levels(forward(x[i : i + DECODE_ROWS], w["params"], w["omega0"]))
+    return out.reshape(*w["grid"], w["d_out"])
 
 
 def encode(media, hidden=64, omega0=30, steps=10000, lr=1e-3, seed=0):
