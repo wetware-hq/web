@@ -1,11 +1,11 @@
 ::meta
 title: web route and file index
-version: 1
+version: 2
 updated: 2026-11-26
 domain: web|shallow-nn|universal-approximator|media|on-chain
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:9066486771f69840d7cf3368ec58ecf2c1689638556fba58aab1f5bfee7d058e
+checksum: sha256:d1f8bf3b28039cdee172c0cf1446eea3669a486d7f618774ca55fee65e7192a8
 ::end
 
 ::schema
@@ -25,6 +25,8 @@ decode | skill | decoder | 1.00 | binary64, round-half-even, psnr, root-check
 commit | system | committer | 1.00 | bytes32-root, calldata, commit-reveal, chain-null, 145544-gas
 web1:3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89 | web | all | 1.00 | astronaut-64, 9110-bytes, psnr-31.18
 dna1 | system | all | 1.00 | synthetic-dna, rotating-code, no-homopolymer, cgr, bases-root, D1-D6
+pool1 | system | all | 1.00 | oligo-pool, 117nt, 4x-overlap, index-parity, revcomp, majority-vote, D7-D11
+cgr1 | system | all | 1.00 | text-glyph, qr-finder-corners, iupac-axes, counts-root, D12-D13
 stop | assertion | all | 1.00 | rendered, checked, sufficient
 ::end
 
@@ -164,6 +166,38 @@ Load docs/follow-agent-contract.md §9. samples/astronaut-64.fa deciphers to sam
 ->[:refuses] homopolymer
 ->[:refuses] bad_word
 ->[:refuses] bad_salt
+->[:precedes] pool1
+->[:precedes] cgr1
+::end
+::end
+
+::node [id=pool1 type=system confidence=1.00 scope=all updated=2026-11-26]
+::dense
+ref=ref/dna.py|pool,unpool|117nt=flank+100+15ix+flank|step=25|oligos=2002|gc=0.3846-0.6068|run=1|D7-D11
+::end
+::full
+Load docs/follow-agent-contract.md §10. samples/astronaut-64.pool.fa unpools to samples/astronaut-64.fa from reads in any order or orientation.
+::end
+::edges
+->[:requires] dna1
+->[:encodes] samples/astronaut-64.fa
+->[:refuses] bad_file
+->[:refuses] gap
+->[:refuses] tie
+->[:refuses] bad_pool
+::end
+::end
+
+::node [id=cgr1 type=system confidence=1.00 scope=all updated=2026-11-26]
+::dense
+ref=ref/dna.py|glyph|k=1-6|ramp=10|corners=C,G,A,T|cols=M/K|rows=S/W|counts-sha256|D12-D13
+::end
+::full
+Load docs/follow-agent-contract.md §11. samples/astronaut-64.cgr3.txt is the k=3 glyph of samples/astronaut-64.fa. A view, not a store.
+::end
+::edges
+->[:requires] dna1
+->[:refuses] bad_header
 ::end
 ::end
 

@@ -14,7 +14,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
   "reads": ["DISCLAIMER", "web.json", "ooc/web.og"],
   "writes": [],
   "must": ["one canonical byte form", "decode is the only normative direction", "never rewrite a committed web", "match codes, not prose"],
-  "check": ["W1-W8", "D1-D6"]
+  "check": ["W1-W8", "D1-D13"]
 }
 ```
 
@@ -35,7 +35,7 @@ store = "*.web"                # canonical bytes, §2
 pins = "web.json"              # sample roots, fidelity and chain
 index = "ooc/web.og"           # ObjectGraph traversal index
 ref = "ref/web.py"             # reference decoder (normative) and encoder (one valid fit)
-dna = "ref/dna.py"             # dna1 cipher, both directions normative, §9
+dna = "ref/dna.py"             # dna1 cipher §9, pool1 oligos §10, cgr1 glyph §11; both directions normative
 commit = "systems/commit-web.md"
 ```
 
@@ -138,6 +138,10 @@ Agents match on codes, never on message text.
 | `homopolymer` | a dna1 sequence repeats a base, or starts with `A` (§9) |
 | `bad_word` | an 11-nt dna1 word encodes a value over 65,535 (§9) |
 | `bad_salt` | a Bases salt is not hex or is not exactly 32 bytes (§9) |
+| `bad_file` | a pool1 file id is not 0–8 (§10) |
+| `gap` | no valid pool1 read covers some base (§10) |
+| `tie` | the valid pool1 reads covering a base disagree with no majority (§10) |
+| `bad_pool` | the voted pool1 sequence's length trailer or padding is inconsistent (§10) |
 
 ## §6 Fidelity
 
@@ -186,7 +190,7 @@ decipher(seq) = the inverse, then unpack; any other input is refused (§5)
 - **Root.** The sequence root is `sha256(ascii(seq))`. With a 32-byte salt, `sha256(salt || ascii(seq))` and the length in nt are what a `Bases` chromosome token commits (`wetware-hq/bases`). The sequence root never stands in for the web root (§4).
 - **CGR.** `fcgr(seq, k)` draws the frequency chaos-game image of a sequence (Jeffrey 1990): the count of each k-mer on a `2^k × 2^k` grid, scaled so the most common is 255 and every present k-mer is at least 1. A dna1 sequence holds no k-mer with a repeated base, so its image is zero everywhere else, and the excluded k-mers form a visible fractal. The image is itself media, so it can be fitted as a web, which closes the loop web → DNA → image → web.
 - **Autoencoder reading.** Fitting is the encoder, the web weights are the latent code, dna1 is the channel code, and decipher plus §3 decode is the decoder.
-- **Not handled.** No oligo split, no index, no error correction. A substitution changes about one 16-bit word, or is refused if it makes a repeat. An insertion or deletion shifts every later word and is almost always refused.
+- **One strand.** A dna1 sequence has no index and no error correction. A substitution changes about one 16-bit word, or is refused if it makes a repeat. An insertion or deletion shifts every later word and is almost always refused. §10 splits it into oligos that can be synthesized and survive loss and substitutions.
 
 | Id | Predicate |
 |---|---|
@@ -196,6 +200,64 @@ decipher(seq) = the inverse, then unpack; any other input is refused (§5)
 | D4 | `decipher` refuses every sequence that `encipher` could not have written |
 | D5 | the non-zero cells of `fcgr(seq, k)` for a pinned sequence are exactly the k-mers with no repeated base |
 | D6 | `sequence == sha256(ascii(seq))` for every pinned sequence |
+
+## §10 Oligo pool `pool1`
+
+`pool1` splits a dna1 sequence into 117-nt oligos and rebuilds it from reads in any order or orientation, after Goldman et al. 2013. Both directions are normative: `ref/dna.py` `pool`/`unpool` is the reference.
+
+```text { type: notebook.cell }
+pool(seq, id):                                      # id in 0..8
+  t  = unrotate(seq)                                # §9 rotating code, back to trits (prev starts at A)
+  s4 = t || 0* || base3(len(seq), 20 trits)         # zeros so len(s4) is a multiple of 25 and >= 100
+  s5 = rotate(s4)                                   # s5 starts with seq itself
+  for i in 0 .. (len(s5) - 100) / 25:
+    F  = s5[25 i : 25 i + 100]; if i odd: F = revcomp(F)
+    IX = base3(id, 2) || base3(i, 12) || P          # P = sum of IX trits 1, 3, 5, ..., 13 (1-based) mod 3
+    O  = F || rotate(IX, prev = last base of F)     # 115 nt
+    emit (T if O starts with A else A) || O || (G if O ends with C else C)    # 117 nt
+unpool(reads, id):
+  flip any read that starts with C|G and ends with A|T (the other strand)
+  drop any read that is not 117 nt of ACGT, has bad flanks, a repeat in IX or a wrong P
+  keep reads of this id; undo the odd-index revcomp; place F at 25 i
+  vote per base; refuse gap or tie; rotate back; check the trailer; return seq
+```
+
+- **Shape.** Each base of `s5` is in 4 oligos, fewer within 75 bases of either end and only 1 in the first and last 25. The 50,105-nt sample becomes 2,002 oligos (234,234 nt, 4.67× the strand). Oligo GC is 0.3846–0.6068 and no oligo repeats a base. GC per oligo is reported, not enforced.
+- **Survives.** Any read order, either strand, foreign reads and reads from other file ids, the loss of interior oligos while every base stays covered, and substitutions outvoted by the other copies.
+- **Refuses, never guesses.** A base covered by no valid read is `gap`. A base whose valid reads disagree with no majority is `tie`. A sequence that fails §9 afterwards is still refused by `decipher`. The first and last 25 bases are in one oligo each, so losing oligo 0 is `gap` and losing the last oligo is `bad_pool`.
+- **Parity is weak, as in the source.** `P` sees only 7 of the 14 index trits, so some index errors pass. A misplaced payload is usually outvoted; an index past the end makes the pool refuse.
+
+| Id | Predicate |
+|---|---|
+| D7 | every pinned pool in `web.json` equals `pool` of its sequence and hashes to its pinned sha256 |
+| D8 | every oligo is 117 nt, starts with `A` or `T`, ends with `C` or `G`, and repeats no base |
+| D9 | `unpool(pool(seq)) == seq` under any read order, either strand per read, and the loss of any oligos that leaves every base covered |
+| D10 | a substitution in one read is outvoted wherever another two valid reads cover the base |
+| D11 | `unpool` refuses (`gap`, `tie`, `bad_pool`) rather than return a sequence the reads do not determine |
+
+## §11 Text glyph `cgr1`
+
+`cgr1` prints the k-mer counts of a sequence (§9 CGR, `1 ≤ k ≤ 6`) as plain text an agent reads directly, without an image decoder. It borrows four features from QR codes (ISO/IEC 18004): a format line, finder corners, a coordinate system and a check value. It is a view of a sequence, not a store: the store is dna1 and pool1.
+
+```text { type: notebook.cell }
+%cgr1 k=<k> nt=<len> peak=<max count> present=<cells > 0>/<4^k> sequence=<sha256(ascii(seq))>     # format line
+%ramp " .:-=+*#%@"                                  # space = absent, "." = least present, "@" = peak
+<k column-label lines, offset k + 2>                # line j, column x: K if bit j of x else M  (M = A|C, K = G|T)
+<k + 1 spaces>C<2^k dashes>G                        # finder corners: the base whose k-mer fills that corner
+<row label> |<2^k ramp characters>|                 # row r: S if bit j of (2^k - 1 - r) else W  (S = C|G, W = A|T)
+<k + 1 spaces>A<2^k dashes>T
+%counts sha256:<sha256 of the counts, row 0 first, decimal ASCII joined by single spaces>
+```
+
+- **Cell address.** Letter `j` of a cell's k-mer, oldest base first, is where its column and row labels meet: `M∩S = C`, `M∩W = A`, `K∩S = G`, `K∩W = T` (IUPAC codes). An agent cites a cell by its k-mer and never needs coordinates.
+- **Biology on the axes.** Row labels are strong/weak bonding, so a row's `S` count is that k-mer's GC count. Column labels are amino/keto.
+- **Level.** A cell's character is `ramp[0]` if its count is 0, else `ramp[1 + (g - 1) * 8 // 254]`, where `g` is the §9 gray level.
+- **Check.** The footer hash covers the exact counts, not the ramp, so two readers agree on what was read only if they also agree on `sha256`.
+
+| Id | Predicate |
+|---|---|
+| D12 | every pinned glyph in `web.json` equals `glyph` of its sequence |
+| D13 | for every cell, the k-mer spelled by its labels is present in the sequence exactly when the cell is not a space |
 
 ## Citations
 

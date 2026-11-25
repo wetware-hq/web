@@ -149,6 +149,135 @@ class Cgr(unittest.TestCase):
         self.assertEqual(int(img.max()), 255)
 
 
+class Pool(unittest.TestCase):
+    def setUp(self):
+        self.seq = dna.read_fasta(path("samples/astronaut-64.fa"))
+        self.oligos = dna.pool(self.seq)
+
+    def unpooled(self, reads):
+        return dna.unpool(reads)[0]
+
+    def refused(self, reads, code):
+        with self.assertRaises(web.Refusal) as ctx:
+            dna.unpool(reads)
+        self.assertEqual(ctx.exception.code, code)
+
+    def test_pinned_pool(self):  # D7
+        for s in PINS["dna"]:
+            p = s["pool"]
+            self.assertEqual(hashlib.sha256(Path(path(p["path"])).read_bytes()).hexdigest(), p["sha256"])
+            reads = dna.read_pool(path(p["path"]))
+            self.assertEqual(reads, dna.pool(dna.read_fasta(path(s["path"])), p["file"]))
+            self.assertEqual(len(reads), p["oligos"])
+
+    def test_oligo_shape(self):  # D8
+        for o in self.oligos:
+            self.assertEqual(len(o), dna.OLIGO_NT)
+            self.assertEqual(dna.longest_run(o), 1)
+            self.assertIn(o[0], "AT")
+            self.assertIn(o[-1], "CG")
+        self.assertEqual(len(self.oligos), (len(self.seq) + dna.LEN_TRITS) // dna.STEP_NT - 3)
+
+    def test_round_trip(self):  # D9
+        self.assertEqual(self.unpooled(self.oligos), self.seq)
+        rng = np.random.default_rng(0)
+        reads = [dna.revcomp(o) if rng.random() < 0.5 else o for o in self.oligos]
+        reads = [reads[i] for i in rng.permutation(len(reads))] + ["ACGT" * 30, "N" * dna.OLIGO_NT]
+        seq, used, dropped = dna.unpool(reads)
+        self.assertEqual((seq, used, dropped), (self.seq, len(self.oligos), 2))
+        self.assertEqual(web.root(dna.decipher(seq)), PINS["webs"][0]["root"])
+
+    def test_short_sequence(self):
+        rng = np.random.default_rng(3)
+        seq = dna.rotate(rng.integers(0, 3, 7).tolist())
+        self.assertEqual(len(dna.pool(seq)), 1)
+        self.assertEqual(self.unpooled(dna.pool(seq)), seq)
+
+    def test_loss_of_interior_oligos(self):  # D9
+        keep = [o for i, o in enumerate(self.oligos) if i % 4 != 1 or i in (1, len(self.oligos) - 2, len(self.oligos) - 1)]
+        self.assertLess(len(keep), len(self.oligos))
+        self.assertEqual(self.unpooled(keep), self.seq)
+
+    def test_substitutions_are_outvoted(self):  # D10
+        reads = list(self.oligos)
+        for i in range(3, len(reads) - 3, 7):
+            o = reads[i]
+            j = 1 + (i * 13) % dna.SEG_NT
+            c = next(b for b in dna.BASES if b not in (o[j - 1], o[j], o[j + 1]))
+            reads[i] = o[:j] + c + o[j + 1 :]
+        self.assertNotEqual(reads, self.oligos)
+        self.assertEqual(self.unpooled(reads), self.seq)
+
+    def test_bad_index_is_dropped(self):
+        o = self.oligos[5]
+        tail = dna.unrotate(o[1 + dna.SEG_NT : -1], o[dna.SEG_NT])
+        tail[-1] = (tail[-1] + 1) % 3
+        bad = o[: 1 + dna.SEG_NT] + dna.rotate(tail, o[dna.SEG_NT]) + o[-1]
+        self.assertIsNone(dna.read_oligo(bad))
+
+    def test_file_ids_share_a_pool(self):
+        rng = np.random.default_rng(4)
+        other = dna.rotate(rng.integers(0, 3, 300).tolist())
+        reads = self.oligos + dna.pool(other, 8)
+        self.assertEqual(dna.unpool(reads, 8)[0], other)
+        self.assertEqual(self.unpooled(reads), self.seq)
+        with self.assertRaises(web.Refusal) as ctx:
+            dna.pool(other, 9)
+        self.assertEqual(ctx.exception.code, "bad_file")
+
+    def test_refusals(self):  # D11
+        self.refused([], "gap")
+        self.refused(self.oligos[1:], "gap")
+        self.refused(self.oligos[:-1], "bad_pool")
+        o = self.oligos[0]
+        j = 30
+        c = next(b for b in dna.BASES if b not in (o[j - 1], o[j], o[j + 1]))
+        self.refused([o[:j] + c + o[j + 1 :]] + self.oligos[1:], "tie")
+
+    def test_cli(self):
+        with tempfile.TemporaryDirectory() as d:
+            p, back = os.path.join(d, "p.fa"), os.path.join(d, "s.fa")
+            self.assertEqual(dna.main(["pool", path("samples/astronaut-64.fa"), p]), 0)
+            self.assertEqual(dna.main(["pool", path("samples/astronaut-64.fa"), p]), 1)
+            self.assertEqual(dna.main(["unpool", p, back, "--file", "1"]), 1)
+            self.assertEqual(dna.main(["unpool", p, back]), 0)
+            self.assertEqual(dna.read_fasta(back), self.seq)
+
+
+class Glyph(unittest.TestCase):
+    def test_pinned_glyph(self):  # D12
+        for s in PINS["dna"]:
+            g = s["glyph"]
+            text = Path(path(g["path"])).read_text("ascii")
+            seq = dna.read_fasta(path(s["path"]))
+            self.assertEqual(dna.glyph(seq, g["k"]), text)
+            self.assertIn(f"%counts sha256:{g['counts']}", text)
+
+    def test_labels_spell_cells(self):  # D13
+        rng = np.random.default_rng(5)
+        seq = "".join(dna.BASES[i] for i in rng.integers(0, 4, 400)) + "AAAA"
+        for k in range(1, 5):
+            cells = dna.read_glyph(dna.glyph(seq, k))
+            self.assertEqual(len(cells), 4**k)
+            for kmer, ch in cells.items():
+                n = sum(seq.startswith(kmer, i) for i in range(len(seq)))
+                self.assertEqual(ch == " ", n == 0, kmer)
+
+    def test_dna1_is_homopolymer_free(self):
+        cells = dna.read_glyph(dna.glyph(dna.read_fasta(path("samples/astronaut-64.fa")), 3))
+        for kmer, ch in cells.items():
+            self.assertEqual(ch == " ", dna.longest_run(kmer) > 1, kmer)
+
+    def test_refusals(self):
+        text = dna.glyph("ACGTTGCA", 2)
+        for bad in ("", text.replace("C----G", "G----C"), text.replace("SS |", "WW |", 1), text.replace("%cgr1 k=2", "%cgr1 k=x")):
+            with self.assertRaises(web.Refusal) as ctx:
+                dna.read_glyph(bad)
+            self.assertEqual(ctx.exception.code, "bad_header")
+        with self.assertRaises(web.Refusal):
+            dna.glyph("ACGT", 7)
+
+
 class Bases(unittest.TestCase):
     def test_salted_root(self):
         salt = bytes(range(32))

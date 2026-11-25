@@ -46,7 +46,17 @@ The full byte layout, decoder and error codes are in [`docs/follow-agent-contrac
 
 The `dna1` cipher ([`ref/dna.py`](ref/dna.py), contract §9) writes a web as one DNA sequence and reads it back to the exact same bytes. Each 2 bytes become 11 bases, and no base ever repeats, so the sequence has no homopolymers. The sample web becomes a 50,105-base sequence ([`samples/astronaut-64.fa`](samples/astronaut-64.fa)) with 50.1% GC.
 
-Going the other way, a chaos-game representation turns the sequence into an image ([`samples/astronaut-64.cgr.png`](samples/astronaut-64.cgr.png)). That image can be fitted as a web too ([`samples/astronaut-64.cgr.web`](samples/astronaut-64.cgr.web), PSNR 36.36 dB). This is a storage form, not compression, and it has no error correction yet.
+Going the other way, a chaos-game representation turns the sequence into an image ([`samples/astronaut-64.cgr.png`](samples/astronaut-64.cgr.png)). That image can be fitted as a web too ([`samples/astronaut-64.cgr.web`](samples/astronaut-64.cgr.web), PSNR 36.36 dB). This is a storage form, not compression.
+
+The `pool1` layer (contract §10) splits that sequence into 2,002 oligos of 117 bases each, after Goldman et al. 2013 ([`samples/astronaut-64.pool.fa`](samples/astronaut-64.pool.fa)). Each oligo carries its own index and a parity check, and each base is in up to 4 oligos. The sequence comes back from reads in any order, from either strand, after some oligos are lost, and after substitutions that the other copies outvote. If the reads do not settle a base, `unpool` refuses with `gap` or `tie` rather than guess.
+
+The `cgr1` glyph (contract §11) prints the chaos-game grid as plain text an agent can read, with labelled corners and axes and a hash of the counts, like the finder patterns and check value on a QR code ([`samples/astronaut-64.cgr3.txt`](samples/astronaut-64.cgr3.txt)).
+
+```sh
+python ref/dna.py pool samples/astronaut-64.fa pool.fa        # 117-nt oligos
+python ref/dna.py unpool pool.fa seq.fa                       # back to the sequence, by majority vote
+python ref/dna.py glyph samples/astronaut-64.fa --k 3         # text CGR
+```
 
 ## What is in this repository
 
