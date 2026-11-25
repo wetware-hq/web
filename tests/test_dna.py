@@ -114,6 +114,17 @@ class Cipher(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 dna.write_fasta(p, self.seq, "x")
 
+    def test_fasta_refusals(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.fa")
+            for body, code in ((b">x\n", "bad_length"), (b">x\nACGNT\n", "bad_base"), (b">x\nAC\xc3\xa9\n", "bad_base")):
+                Path(p).write_bytes(body)
+                with self.assertRaises(web.Refusal) as ctx:
+                    dna.read_fasta(p)
+                self.assertEqual(ctx.exception.code, code)
+                self.assertEqual(dna.main(["stats", p]), 1)
+                self.assertEqual(dna.main(["cgr", p, os.path.join(d, "c.png")]), 1)
+
     def test_cli(self):
         with tempfile.TemporaryDirectory() as d:
             w, fa, back = (os.path.join(d, n) for n in ("x.web", "x.fa", "y.web"))

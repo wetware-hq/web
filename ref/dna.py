@@ -123,12 +123,21 @@ def allowed(k):
 
 
 def read_fasta(path):
-    lines = Path(path).read_text(encoding="ascii").splitlines()
+    try:
+        lines = Path(path).read_bytes().decode("ascii").splitlines()
+    except UnicodeDecodeError as err:
+        raise web.Refusal("bad_base", f"non-ASCII byte at {err.start}") from None
     if not lines or not lines[0].startswith(">"):
         raise web.Refusal("bad_base", "not a FASTA record")
     if any(ln.startswith(">") for ln in lines[1:]):
         raise web.Refusal("bad_base", "more than one FASTA record")
-    return "".join(ln.strip() for ln in lines[1:])
+    seq = "".join(ln.strip() for ln in lines[1:])
+    if not seq:
+        raise web.Refusal("bad_length", "empty sequence")
+    bad = seq.strip(BASES)
+    if bad:
+        raise web.Refusal("bad_base", f"{bad[0]!r} at {seq.index(bad[0])}")
+    return seq
 
 
 def write_fasta(path, seq, header):
