@@ -293,8 +293,11 @@ def main(argv=None):
     a = ap.parse_args(argv)
     try:
         if a.cmd == "encode":
+            if Path(a.out).exists():
+                raise Refusal("exists", f"{a.out}; a new fit is a new web, write it to a new path")
             blob = encode(read_png(a.png), a.hidden, a.omega0, a.steps, a.lr, a.seed)
-            Path(a.out).write_bytes(blob)
+            with open(a.out, "xb") as f:
+                f.write(blob)
             print(root(blob), len(blob))
         elif a.cmd == "decode":
             write_png(a.out, decode(Path(a.web).read_bytes()))

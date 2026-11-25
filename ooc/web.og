@@ -5,7 +5,7 @@ updated: 2026-11-26
 domain: web|shallow-nn|universal-approximator|media|on-chain
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:ed3d66f8c416cd4b4d07910ad041f83dd41b6eba224df310f64154367f673c35
+checksum: sha256:4cfe13d104903acd2951547673c7e12d0881b4876b1103afb2ca58b7d2a8f1b1
 ::end
 
 ::schema
@@ -99,6 +99,7 @@ Load skills/encode-media.md; run ref/web.py encode.
 ->[:requires] ref/web.py
 ->[:precedes] decode
 ->[:refuses] bad_media
+->[:refuses] exists
 ::end
 ::end
 

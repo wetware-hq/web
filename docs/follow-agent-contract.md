@@ -126,7 +126,8 @@ Agents match on codes, never on message text.
 | `trailing_bytes` | bytes remain after the last weight |
 | `bad_weight` | a weight is NaN, infinite or negative zero, or the encoder produced a weight that overflows binary16 |
 | `too_large` | the file is over 65,536 bytes |
-| `bad_media` | the source is not an 8-bit non-interlaced gray, RGB or RGBA PNG, or a shrink factor does not divide its size |
+| `bad_media` | the source is not an intact 8-bit non-interlaced gray, RGB or RGBA PNG, or a shrink factor is not a positive divisor of its size |
+| `exists` | the encoder's output path already holds a file; a new fit is written to a new path |
 | `shape_mismatch` | a render's shape differs from the media it is checked against |
 | `below_fidelity` | a render's PSNR is under the threshold asked for |
 | `root_mismatch` | the bytes read back do not hash to the root they were fetched by (`systems/commit-web.md`) |

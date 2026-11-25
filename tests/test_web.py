@@ -75,6 +75,21 @@ class Format(unittest.TestCase):
             web.pack((5, 7), 3, 8, 30, p)
         self.assertEqual(ctx.exception.code, "bad_weight")
 
+    def test_pack_refuses_unreadable_header(self):
+        for grid, omega0 in (((1, 7), 30), ((5, 7), 256), ((70000, 2), 30)):
+            p = [np.zeros(s) for s in web.shapes(2, 3, 8)]
+            with self.assertRaises(web.Refusal) as ctx:
+                web.pack(grid, 3, 8, omega0, p)
+            self.assertEqual(ctx.exception.code, "bad_header")
+
+    def test_decode_chunks_match(self):
+        whole = web.decode(self.blob)
+        old, web.DECODE_ROWS = web.DECODE_ROWS, 4
+        try:
+            self.assertTrue(np.array_equal(web.decode(self.blob), whole))
+        finally:
+            web.DECODE_ROWS = old
+
 
 class Media(unittest.TestCase):
     def test_png_round_trip(self):
@@ -83,6 +98,19 @@ class Media(unittest.TestCase):
             f = os.path.join(d, "x.png")
             web.write_png(f, img)
             self.assertTrue(np.array_equal(web.read_png(f), img))
+            data = Path(f).read_bytes()
+            for cut in (12, len(data) // 2, len(data) - 20):
+                Path(f).write_bytes(data[:-cut])
+                with self.assertRaises(web.Refusal) as ctx:
+                    web.read_png(f)
+                self.assertEqual(ctx.exception.code, "bad_media")
+
+    def test_shrink_refuses_bad_factor(self):
+        img = np.zeros((4, 4, 3), dtype=np.uint8)
+        for factor in (0, -2, 3):
+            with self.assertRaises(web.Refusal) as ctx:
+                web.shrink(img, factor)
+            self.assertEqual(ctx.exception.code, "bad_media")
 
     def test_encode_small(self):
         img = np.random.default_rng(3).integers(0, 256, (8, 8, 1), dtype=np.uint8)
@@ -98,6 +126,13 @@ class Cli(unittest.TestCase):
         self.assertEqual(rc, 1)
         rc = web.main(["check", path(w["path"]), path(w["media"]["path"]), "--root", w["root"], "--min-psnr", "30"])
         self.assertEqual(rc, 0)
+
+    def test_encode_refuses_existing_output(self):
+        w = PINS["webs"][0]
+        before = Path(path(w["path"])).read_bytes()
+        rc = web.main(["encode", path(w["media"]["path"]), path(w["path"]), "--steps", "1"])
+        self.assertEqual(rc, 1)
+        self.assertEqual(Path(path(w["path"])).read_bytes(), before)
 
 
 class Index(unittest.TestCase):
