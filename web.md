@@ -25,3 +25,4 @@ output  = "weights --fileformat .web { binary16 LE, root = sha256(bytes) }"
 4. **Refusals are codes.** Bad input fails with a stable code (`bad_magic`, `bad_header`, `truncated`, `trailing_bytes`, `bad_weight`, `too_large`, …), never partial output (contract §5).
 5. **Weights as tensor.** A file is a fixed-length weight vector, so a deep net can read it directly. Any reader must allow for hidden-unit permutation (contract §7).
 6. **Chain-ready, not chained.** The 32-byte root fits a `bytes32` and the bytes fit calldata ([`systems/commit-web.md`](systems/commit-web.md)). No contract is deployed (`web.json` `chain` is `null`).
+7. **DNA form.** The `dna1` cipher writes a file as one `ACGT` sequence with no repeated base and reads it back byte for byte (contract §9).

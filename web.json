@@ -29,5 +29,24 @@
       "fit": { "steps": 10000, "lr": 0.001, "seed": 0, "optimiser": "adam" },
       "psnr": 31.18
     }
+  ],
+  "dna": [
+    {
+      "name": "astronaut-64",
+      "cipher": "dna1",
+      "reference": "ref/dna.py",
+      "path": "samples/astronaut-64.fa",
+      "web": { "path": "samples/astronaut-64.web", "root": "3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89" },
+      "nt": 50105,
+      "sequence": "f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1",
+      "gc": 0.5009,
+      "longest_run": 1,
+      "cgr": {
+        "path": "samples/astronaut-64.cgr.png",
+        "k": 6,
+        "sha256": "147b85a9376f3001c814e9c15beecaa844dde7ef1255139409dc4c6f912cf5bd",
+        "web": { "path": "samples/astronaut-64.cgr.web", "root": "a625eef4b23e7223c2e5478ae4390d48fb3a67fb61c0530ec97feb0d54ff78b5", "bytes": 8850, "psnr": 36.36 }
+      }
+    }
   ]
 }

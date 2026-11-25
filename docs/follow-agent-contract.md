@@ -14,7 +14,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
   "reads": ["DISCLAIMER", "web.json", "ooc/web.og"],
   "writes": [],
   "must": ["one canonical byte form", "decode is the only normative direction", "never rewrite a committed web", "match codes, not prose"],
-  "check": ["W1-W8"]
+  "check": ["W1-W8", "D1-D6"]
 }
 ```
 
@@ -35,6 +35,7 @@ store = "*.web"                # canonical bytes, §2
 pins = "web.json"              # sample roots, fidelity and chain
 index = "ooc/web.og"           # ObjectGraph traversal index
 ref = "ref/web.py"             # reference decoder (normative) and encoder (one valid fit)
+dna = "ref/dna.py"             # dna1 cipher, both directions normative, §9
 commit = "systems/commit-web.md"
 ```
 
@@ -132,6 +133,10 @@ Agents match on codes, never on message text.
 | `shape_mismatch` | a render's shape differs from the media it is checked against |
 | `below_fidelity` | a render's PSNR is under the threshold asked for |
 | `root_mismatch` | the bytes read back do not hash to the root they were fetched by (`systems/commit-web.md`) |
+| `bad_length` | a dna1 sequence is empty or its length is not a multiple of 11 (§9) |
+| `bad_base` | a dna1 sequence holds a letter other than `A`, `C`, `G`, `T`, or its FASTA file is not exactly one record (§9) |
+| `homopolymer` | a dna1 sequence repeats a base, or starts with `A` (§9) |
+| `bad_word` | an 11-nt dna1 word encodes a value over 65,535 (§9) |
 
 ## §6 Fidelity
 
@@ -161,18 +166,50 @@ A web is already a tensor: for an `r = 2`, `H = 64`, `d = 3` image it is 4,547 n
 | W7 | a web stores no pixel of its source; it holds only the §2 header and weights |
 | W8 | `ooc/web.og` checksum equals sha256 of the file with its `checksum:` line removed |
 
+## §9 DNA cipher `dna1`
+
+`dna1` is a lossless, two-way map between a web and one synthetic-DNA sequence over `ACGT`. Both directions are normative: `ref/dna.py` is the reference.
+
+```text { type: notebook.cell }
+encipher(web):
+  unpack(web)                                     # only accepted webs, §2
+  w = web XOR keystream(len(web))                 # keystream = sha256("dna1" || u64be(i)) blocks, i = 0, 1, ...
+  for each little-endian uint16 v of w:           # header and weights alike, in file order
+    write v as 11 base-3 digits, most significant first
+    for each digit t: prev = (prev + 1 + t) mod 4; emit "ACGT"[prev]    # prev starts at A
+decipher(seq) = the inverse, then unpack; any other input is refused (§5)
+```
+
+- **Shape.** A web of `n` bytes is `11 n / 2` nt. The 9,110-byte sample is 50,105 nt. This is a storage form, not compression: it is 1.375 bits per base, against a maximum of 2.
+- **Constraints.** No base is ever repeated (longest run 1), after Goldman et al. 2013. The keystream makes the sequence look random, so GC content is near 50% (sample: 0.5009) and long repeats are unlikely. The keystream is public and fixed. It is not encryption and hides nothing.
+- **Root.** The sequence root is `sha256(ascii(seq))`. With a 32-byte salt, `sha256(salt || ascii(seq))` and the length in nt are what a `Bases` chromosome token commits (`wetware-hq/bases`). The sequence root never stands in for the web root (§4).
+- **CGR.** `fcgr(seq, k)` draws the frequency chaos-game image of a sequence (Jeffrey 1990): the count of each k-mer on a `2^k × 2^k` grid, scaled so the most common is 255. A dna1 sequence holds no k-mer with a repeated base, so its image is zero everywhere else, and the excluded k-mers form a visible fractal. The image is itself media, so it can be fitted as a web, which closes the loop web → DNA → image → web.
+- **Autoencoder reading.** Fitting is the encoder, the web weights are the latent code, dna1 is the channel code, and decipher plus §3 decode is the decoder.
+- **Not handled.** No oligo split, no index, no error correction. A substitution changes about one 16-bit word, or is refused if it makes a repeat. An insertion or deletion shifts every later word and is almost always refused.
+
+| Id | Predicate |
+|---|---|
+| D1 | `encipher` depends only on the web bytes; every sequence in `web.json` `dna` equals `encipher` of its web |
+| D2 | `decipher(encipher(b)) == b` for every accepted web `b` |
+| D3 | no sequence from `encipher` repeats a base |
+| D4 | `decipher` refuses every sequence that `encipher` could not have written |
+| D5 | the non-zero cells of `fcgr(seq, k)` for a pinned sequence are exactly the k-mers with no repeated base |
+| D6 | `sequence == sha256(ascii(seq))` for every pinned sequence |
+
 ## Citations
 
 - Universal approximation: Cybenko 1989, Hornik 1991 (`docs/pin-sources.md` §Theory).
 - Sine networks for signals: SIREN, arXiv:2006.09661.
 - Media as network weights: COIN, arXiv:2103.03123.
 - Networks reading weights: functa, arXiv:2201.12204; DWSNets, arXiv:2301.12780.
+- DNA storage, rotating code and CGR: Goldman et al. 2013; Jeffrey 1990; iCGR, arXiv:1712.04546; JPEG-DNA, arXiv:2103.09616 (`docs/pin-sources.md` §DNA).
 
 ## Falsification
 
 - A file accepted by `unpack` re-serializes to different bytes.
 - Two decodes of one web on one machine differ.
 - `python ref/web.py check samples/astronaut-64.web samples/astronaut-64.png` prints a PSNR more than 0.01 dB from `web.json`.
+- `python ref/dna.py decipher samples/astronaut-64.fa out.web` writes bytes other than `samples/astronaut-64.web`.
 
 ## Licence
 

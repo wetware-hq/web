@@ -5,7 +5,7 @@ updated: 2026-11-26
 domain: web|shallow-nn|universal-approximator|media|on-chain
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:547d5c34b44e1f45e433aa47fa9c3d0a557bef418d9960c34eff0a06b2adbeeb
+checksum: sha256:600a9ed5fcb777e0d353e605e31f20410498a5095364bc176b0bb29410d9a1e3
 ::end
 
 ::schema
@@ -24,6 +24,7 @@ encode | skill | encoder | 1.00 | sine-2x64, adam, binary16, seed, not-normative
 decode | skill | decoder | 1.00 | binary64, round-half-even, psnr, root-check
 commit | system | committer | 1.00 | bytes32-root, calldata, commit-reveal, chain-null, 145544-gas
 web1:3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89 | web | all | 1.00 | astronaut-64, 9110-bytes, psnr-31.18
+dna1 | system | all | 1.00 | synthetic-dna, rotating-code, no-homopolymer, cgr, bases-root, D1-D6
 stop | assertion | all | 1.00 | rendered, checked, sufficient
 ::end
 
@@ -148,6 +149,23 @@ The pinned sample web; its source is samples/astronaut-64.png.
 ::end
 ::end
 
+::node [id=dna1 type=system confidence=1.00 scope=all updated=2026-11-26]
+::dense
+ref=ref/dna.py|11nt-per-2-bytes|run=1|gc=0.5009|nt=50105|fcgr-k6|D1-D6
+::end
+::full
+Load docs/follow-agent-contract.md §9. samples/astronaut-64.fa deciphers to samples/astronaut-64.web.
+::end
+::edges
+->[:requires] docs/follow-agent-contract.md
+->[:encodes] samples/astronaut-64.web
+->[:refuses] bad_length
+->[:refuses] bad_base
+->[:refuses] homopolymer
+->[:refuses] bad_word
+::end
+::end
+
 ::node [id=stop type=assertion confidence=1.00 scope=all updated=2026-11-26]
 ::dense
 render-written|check-passed|halt
@@ -157,5 +175,6 @@ render-written|check-passed|halt
 ::node [id=__changelog type=meta confidence=1.00 scope=all updated=2026-11-26]
 ::dense
 v1=web1-format|reference-decoder|astronaut-64-sample
+v2=dna1-cipher|cgr|astronaut-64-dna
 ::end
 ::end
