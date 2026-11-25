@@ -94,7 +94,8 @@ def fcgr(seq, k):
     """Frequency chaos-game image: k-mer counts on a 2^k x 2^k grid, row 0 at the top.
 
     The newest base of a k-mer picks the quadrant, as in the CGR, where each point moves halfway
-    to its base's corner. Returns uint8 gray levels, 255 at the most frequent k-mer, 0 if absent.
+    to its base's corner. Returns uint8 gray levels, 255 at the most frequent k-mer, at least 1 for
+    any k-mer present, 0 only if absent.
     """
     n = 1 << k
     counts = np.zeros((n, n), np.int64)
@@ -105,7 +106,9 @@ def fcgr(seq, k):
             x |= cx << bit
             y |= cy << bit
         counts[n - 1 - y, x] += 1
-    return np.rint(counts * 255.0 / counts.max()).astype(np.uint8)[:, :, None]
+    img = np.rint(counts * 255.0 / counts.max()).astype(np.uint8)
+    img[(counts > 0) & (img == 0)] = 1
+    return img[:, :, None]
 
 
 def allowed(k):

@@ -129,6 +129,13 @@ class Cipher(unittest.TestCase):
             self.assertEqual(Path(w).read_bytes(), self.blob)
 
 
+class Cgr(unittest.TestCase):
+    def test_rare_kmer_is_present(self):
+        img = dna.fcgr("AC" * 600 + "G", 1)
+        self.assertEqual(int((img > 0).sum()), 3)
+        self.assertEqual(int(img.max()), 255)
+
+
 class Bases(unittest.TestCase):
     def test_salted_root(self):
         salt = bytes(range(32))
