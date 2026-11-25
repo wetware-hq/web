@@ -31,28 +31,40 @@ class Refusal(Exception):
 
 
 def read_png(path):
-    data = Path(path).read_bytes()
+    try:
+        return _read_png(Path(path).read_bytes())
+    except (struct.error, zlib.error, ValueError, IndexError) as err:
+        raise Refusal("bad_media", f"damaged PNG ({err})")
+
+
+def _read_png(data):
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise Refusal("bad_media", "not a PNG")
-    pos, idat, ihdr = 8, b"", None
+    pos, idat, ihdr, end = 8, b"", None, False
     while pos < len(data):
         (n,) = struct.unpack(">I", data[pos : pos + 4])
         kind, body = data[pos + 4 : pos + 8], data[pos + 8 : pos + 8 + n]
+        (crc,) = struct.unpack(">I", data[pos + 8 + n : pos + 12 + n])
+        if zlib.crc32(kind + body) != crc:
+            raise Refusal("bad_media", f"bad CRC in {kind!r}")
         pos += 12 + n
         if kind == b"IHDR":
             ihdr = struct.unpack(">IIBBBBB", body)
         elif kind == b"IDAT":
             idat += body
         elif kind == b"IEND":
+            end = True
             break
-    if ihdr is None:
-        raise Refusal("bad_media", "no IHDR")
+    if ihdr is None or not end:
+        raise Refusal("bad_media", "missing IHDR or IEND")
     w, h, depth, ctype, _, _, interlace = ihdr
     channels = {0: 1, 2: 3, 6: 4}.get(ctype)
     if depth != 8 or channels is None or interlace != 0:
         raise Refusal("bad_media", "only 8-bit non-interlaced gray, RGB or RGBA")
     raw = zlib.decompress(idat)
     stride = w * channels
+    if len(raw) != h * (stride + 1):
+        raise Refusal("bad_media", "pixel data has the wrong length")
     out = np.zeros((h, stride), dtype=np.uint8)
     prev = np.zeros(stride, dtype=np.int32)
     for y in range(h):
