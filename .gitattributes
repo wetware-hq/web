@@ -1,0 +1,3 @@
+*.web binary
+*.png binary
+/ooc/web.og text eol=lf
