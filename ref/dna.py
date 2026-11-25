@@ -178,7 +178,10 @@ def main(argv=None):
         elif a.cmd == "cgr":
             if not 1 <= a.k <= 10:
                 raise web.Refusal("bad_header", "k must be 1-10")
-            web.write_png(a.out, fcgr(read_fasta(a.fasta), a.k))
+            img = fcgr(read_fasta(a.fasta), a.k)
+            if Path(a.out).exists():
+                raise web.Refusal("exists", a.out)
+            web.write_png(a.out, img)
     except web.Refusal as err:
         print(err, file=sys.stderr)
         return 1
