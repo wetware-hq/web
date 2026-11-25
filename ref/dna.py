@@ -361,11 +361,8 @@ def write_fasta(path, seq, header):
 
 
 def read_pool(path):
-    """Every record of a FASTA file, as reads; a bad record is kept for unpool to drop."""
-    try:
-        lines = Path(path).read_bytes().decode("ascii").splitlines()
-    except UnicodeDecodeError as err:
-        raise web.Refusal("bad_base", f"non-ASCII byte at {err.start}") from None
+    """Every record of a FASTA file, as reads; a bad record, even non-ASCII, is kept for unpool to drop."""
+    lines = Path(path).read_bytes().decode("ascii", "replace").splitlines()
     reads, cur = [], None
     for ln in lines:
         if ln.startswith(">"):

@@ -271,6 +271,12 @@ class Pool(unittest.TestCase):
             self.assertEqual(dna.main(["unpool", p, back, "--file", "1"]), 1)
             self.assertEqual(dna.main(["unpool", p, back]), 0)
             self.assertEqual(dna.read_fasta(back), self.seq)
+            raw = Path(p).read_bytes().split(b"\n")
+            raw[0] += " é".encode()
+            raw[3] = raw[3][:5] + "é".encode() + raw[3][7:]
+            Path(p).write_bytes(b"\n".join(raw))
+            reads = dna.read_pool(p)
+            self.assertEqual(dna.unpool(reads)[1:], (len(self.oligos) - 1, 1))
 
 
 class Glyph(unittest.TestCase):
