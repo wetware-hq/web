@@ -1,0 +1,30 @@
+{
+  "format": "web1",
+  "spec": "docs/follow-agent-contract.md",
+  "reference": "ref/web.py",
+  "chain": null,
+  "sources": {
+    "astronaut": {
+      "url": "https://gitlab.com/scikit-image/data/-/raw/d448e33739b0da758f44c69bd185747ab6696ada/astronaut.png",
+      "sha256": "88431cd9653ccd539741b555fb0a46b61558b301d4110412b5bc28b5e3ea6cb5",
+      "licence": "public domain (NASA; scikit-image astronaut())"
+    }
+  },
+  "webs": [
+    {
+      "name": "astronaut-64",
+      "path": "samples/astronaut-64.web",
+      "root": "3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89",
+      "bytes": 9110,
+      "header": { "activation": "sine", "omega0": 30, "grid": [64, 64], "channels": 3, "hidden": 64, "dtype": "binary16" },
+      "media": {
+        "path": "samples/astronaut-64.png",
+        "sha256": "a4dcbffddaf26269e3b6007f3d7b6e24d529888f71abcd2ac42dea58dcf48aa7",
+        "from": "astronaut",
+        "derive": "shrink 8"
+      },
+      "fit": { "steps": 10000, "lr": 0.001, "seed": 0, "optimiser": "adam" },
+      "psnr": 31.18
+    }
+  ]
+}
