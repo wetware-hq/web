@@ -103,7 +103,7 @@ def write_png(path, img):
 def shrink(img, factor):
     """Box-mean downsample by an integer factor, rounding half to even."""
     h, w, c = img.shape
-    if h % factor or w % factor:
+    if factor < 1 or h % factor or w % factor:
         raise Refusal("bad_media", "size is not a multiple of the factor")
     blocks = img.reshape(h // factor, factor, w // factor, factor, c).astype(np.float64)
     return np.rint(blocks.mean(axis=(1, 3))).astype(np.uint8)
