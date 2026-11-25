@@ -158,7 +158,7 @@ def main(argv=None):
     d.add_argument("--root", help="refuse unless the rebuilt web hashes to this root")
     s = sub.add_parser("stats", help="print length, sequence root, GC and longest run")
     s.add_argument("fasta")
-    s.add_argument("--salt", help="hex salt; prints the Bases root sha256(salt || bases)")
+    s.add_argument("--salt", help="32-byte hex salt; prints the Bases root sha256(salt || bases)")
     c = sub.add_parser("cgr", help="draw the frequency chaos-game image of a sequence")
     c.add_argument("fasta")
     c.add_argument("out")
@@ -184,8 +184,14 @@ def main(argv=None):
         elif a.cmd == "stats":
             seq = read_fasta(a.fasta)
             line = f"nt {len(seq)} sequence {seq_root(seq)} gc {gc(seq):.4f} run {longest_run(seq)}"
-            if a.salt:
-                line += f" bases {seq_root(seq, bytes.fromhex(a.salt))}"
+            if a.salt is not None:
+                try:
+                    salt = bytes.fromhex(a.salt)
+                except ValueError:
+                    raise web.Refusal("bad_salt", "not hex") from None
+                if len(salt) != 32:
+                    raise web.Refusal("bad_salt", f"{len(salt)} bytes, a Bases salt is 32")
+                line += f" bases {seq_root(seq, salt)}"
             print(line)
         elif a.cmd == "cgr":
             if not 1 <= a.k <= 10:

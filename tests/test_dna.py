@@ -135,6 +135,8 @@ class Cipher(unittest.TestCase):
             self.assertEqual(dna.main(["decipher", fa, back, "--root", web.root(self.blob)]), 0)
             self.assertEqual(Path(back).read_bytes(), self.blob)
             self.assertEqual(dna.main(["stats", fa, "--salt", "00" * 32]), 0)
+            self.assertEqual(dna.main(["stats", fa, "--salt", "00" * 31]), 1)
+            self.assertEqual(dna.main(["stats", fa, "--salt", "zz"]), 1)
             self.assertEqual(dna.main(["cgr", fa, os.path.join(d, "c.png"), "--k", "11"]), 1)
             self.assertEqual(dna.main(["cgr", fa, w]), 1)
             self.assertEqual(Path(w).read_bytes(), self.blob)

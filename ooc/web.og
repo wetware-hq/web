@@ -5,7 +5,7 @@ updated: 2026-11-26
 domain: web|shallow-nn|universal-approximator|media|on-chain
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:600a9ed5fcb777e0d353e605e31f20410498a5095364bc176b0bb29410d9a1e3
+checksum: sha256:9066486771f69840d7cf3368ec58ecf2c1689638556fba58aab1f5bfee7d058e
 ::end
 
 ::schema
@@ -163,6 +163,7 @@ Load docs/follow-agent-contract.md §9. samples/astronaut-64.fa deciphers to sam
 ->[:refuses] bad_base
 ->[:refuses] homopolymer
 ->[:refuses] bad_word
+->[:refuses] bad_salt
 ::end
 ::end
 

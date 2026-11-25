@@ -137,6 +137,7 @@ Agents match on codes, never on message text.
 | `bad_base` | a dna1 sequence holds a letter other than `A`, `C`, `G`, `T`, or its FASTA file is not exactly one record (§9) |
 | `homopolymer` | a dna1 sequence repeats a base, or starts with `A` (§9) |
 | `bad_word` | an 11-nt dna1 word encodes a value over 65,535 (§9) |
+| `bad_salt` | a Bases salt is not hex or is not exactly 32 bytes (§9) |
 
 ## §6 Fidelity
 
