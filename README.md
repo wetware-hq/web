@@ -23,6 +23,9 @@ pip install -r requirements.txt
 python ref/web.py check  samples/astronaut-64.web samples/astronaut-64.png   # root, size, PSNR
 python ref/web.py decode samples/astronaut-64.web out.png                    # rebuild the image
 python ref/web.py encode samples/astronaut-64.png my.web                     # fit a new web (~70 s)
+python ref/dna.py encipher samples/astronaut-64.web my.fa                     # web -> synthetic DNA
+python ref/dna.py decipher samples/astronaut-64.fa  back.web                 # DNA -> the same web bytes
+python ref/dna.py cgr      samples/astronaut-64.fa  cgr.png                  # chaos-game image of the DNA
 python -m unittest discover -s tests
 ```
 
@@ -39,6 +42,22 @@ The sample is a 64 × 64 photo of astronaut Eileen Collins (NASA, public domain)
 
 The full byte layout, decoder and error codes are in [`docs/follow-agent-contract.md`](docs/follow-agent-contract.md).
 
+## A web as synthetic DNA
+
+The `dna1` cipher ([`ref/dna.py`](ref/dna.py), contract §9) writes a web as one DNA sequence and reads it back to the exact same bytes. Each 2 bytes become 11 bases, and no base ever repeats, so the sequence has no homopolymers. The sample web becomes a 50,105-base sequence ([`samples/astronaut-64.fa`](samples/astronaut-64.fa)) with 50.1% GC.
+
+Going the other way, a chaos-game representation turns the sequence into an image ([`samples/astronaut-64.cgr.png`](samples/astronaut-64.cgr.png)). That image can be fitted as a web too ([`samples/astronaut-64.cgr.web`](samples/astronaut-64.cgr.web), PSNR 36.36 dB). This is a storage form, not compression.
+
+The `pool1` layer (contract §10) splits that sequence into 2,002 oligos of 117 bases each, after Goldman et al. 2013 ([`samples/astronaut-64.pool.fa`](samples/astronaut-64.pool.fa)). Each oligo carries its own index and a parity check, and each base is in up to 4 oligos. The sequence comes back from reads in any order, from either strand, after some oligos are lost, and after substitutions that the other copies outvote. If the reads do not settle a base, `unpool` refuses with `gap` or `tie` rather than guess.
+
+The `cgr1` glyph (contract §11) prints the chaos-game grid as plain text an agent can read, with labelled corners and axes and a hash of the counts, like the finder patterns and check value on a QR code ([`samples/astronaut-64.cgr3.txt`](samples/astronaut-64.cgr3.txt)).
+
+```sh
+python ref/dna.py pool samples/astronaut-64.fa pool.fa        # 117-nt oligos
+python ref/dna.py unpool pool.fa seq.fa                       # back to the sequence, by majority vote
+python ref/dna.py glyph samples/astronaut-64.fa --k 3         # text CGR
+```
+
 ## What is in this repository
 
 | Path | What it covers |
@@ -53,7 +72,8 @@ The full byte layout, decoder and error codes are in [`docs/follow-agent-contrac
 | [`skills/decode-web.md`](skills/decode-web.md) | Rebuilding an image and checking a web. |
 | [`systems/commit-web.md`](systems/commit-web.md) | Putting a web on chain and reading it back. |
 | [`ref/web.py`](ref/web.py) | The reference encoder and decoder (Python + numpy). |
-| [`web.json`](web.json) | Pins for the sample: source hash, web root, size and PSNR. |
+| [`ref/dna.py`](ref/dna.py) | The `dna1` cipher: web ↔ synthetic DNA, plus chaos-game images. |
+| [`web.json`](web.json) | Pins for the sample: source hash, web root, size and PSNR, and its DNA sequence. |
 | [`ooc/web.og`](ooc/web.og) | A compact map of the files, for agents that traverse links. |
 
 ## Current status

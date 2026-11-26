@@ -47,6 +47,18 @@ The theorems guarantee that a good enough web exists for enough units. They do n
 | Treating each datum as a network and training deep nets on the weights; shared initialisation | Dupont et al. (2022) From data to functa, arXiv:2201.12204 |
 | Deep nets that respect the permutation symmetry of hidden units | Navon et al. (2023) DWSNets, arXiv:2301.12780 |
 
+## DNA
+
+| Use | Source |
+|---|---|
+| Rotating base-3 code with no repeated base; 117-nt oligos with 4× overlap, index, parity and alternating reverse complement (pool1) | Goldman, N. et al. (2013) Towards practical, high-capacity, low-maintenance information storage in synthesized DNA. *Nature* 494, 77–80. doi:10.1038/nature11875 |
+| Chaos-game representation of a sequence | Jeffrey, H. J. (1990) Chaos game representation of gene structure. *Nucleic Acids Res.* 18(8), 2163–2170. doi:10.1093/nar/18.8.2163 |
+| Integer CGR: a sequence is recovered exactly from its CGR point | iCGR, arXiv:1712.04546 |
+| Image coding for DNA: GC balance and homopolymer limits | JPEG-DNA, arXiv:2103.09616 |
+| Autoencoder latents coded into DNA | arXiv:2306.12882 |
+| Finder patterns, format information and a check value on a printed code (cgr1 frame) | ISO/IEC 18004:2015 *QR Code bar code symbology specification* |
+| Implicit-neural-representation weights coded into DNA | arXiv:2309.06956 |
+
 ## Media
 
 | Path | Source | sha256 | Licence |

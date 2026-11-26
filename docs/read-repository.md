@@ -35,6 +35,9 @@ Read `DISCLAIMER` before any node. Then take the first row that covers the task 
 | Put a web on chain, or read one back | `systems/commit-web.md` |
 | Check whether a source or sample may be used | `docs/pin-sources.md` |
 | Understand the link to biological neurons | `docs/vary-cybernetics.md` |
+| Write a web as DNA, or read one back | contract §9 → `ref/dna.py` |
+| Split a sequence into oligos, or rebuild it from reads | contract §10 → `ref/dna.py pool`/`unpool` |
+| Read a sequence's k-mer profile as text | contract §11 → `ref/dna.py glyph` |
 | Traverse without reading prose | `ooc/web.og` |
 | Anything else, or a conflict | `docs/follow-agent-contract.md` |
 
