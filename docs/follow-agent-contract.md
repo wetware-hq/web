@@ -276,10 +276,10 @@ kind    := think | hypothesis act observe            # a hypothesis is always fo
 think       view=web size=<1-64>  -> view1 body     # the web's render, block-mean luminance, " .:-=+*#%@" dark to bright
 think       view=cgr k=<1-6>      -> cgr1 glyph §11
 hypothesis  expect=intact k=<1-6> -> cgr1 glyph of the data at k: the picture it predicts
-hypothesis  expect=refused:<code> k=<1-6> -> no body: it predicts unpool refuses with that §5 code
-act         op=lose   file=<0-8> oligos=<ascending pool indices, comma-joined>
+hypothesis  expect=refused:gap|tie|bad_pool k=<1-6> -> no body: it predicts unpool refuses with that §5 code
+act         op=lose   file=<0-8> oligos=<distinct ascending pool indices >= 0, comma-joined>
 act         op=damage file=<0-8> seed=<u63> drop=<per mille> sub=<per mille> flip=<per mille>
-act         op=reads  file=<0-8> sha256=<hex of the reads file> path=<relative to the loop file>
+act         op=reads  file=<0-8> sha256=<hex of the reads file> path=<[A-Za-z0-9._/-]+, under the loop file's directory>
 observe     outcome=refused:<code> verdict=<v>                                   -> no body
 observe     outcome=intact|changed sequence=<hex> used=<n> dropped=<n> verdict=<v>  -> cgr1 glyph at the hypothesis k, then a diff
 head    := "%head " h_n, h_0 = sha256("loop1"), h_(j+1) = sha256(h_j raw || block j)   # header, then each frame block, as ASCII

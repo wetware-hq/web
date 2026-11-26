@@ -23,6 +23,7 @@ VIEW_RAMP = " .:-=+*#%@"  # web view: space = darkest, "@" = brightest
 DIFF = {"same": "=", "more": "+", "fewer": "-", "appeared": "!", "vanished": "?"}
 OPS = {"lose": ("file", "oligos"), "damage": ("file", "seed", "drop", "sub", "flip"), "reads": ("file", "sha256", "path")}
 PER = 1000  # damage rates are per mille
+UNPOOL_CODES = ("gap", "tie", "bad_pool")
 
 
 def chain(blocks):
@@ -159,7 +160,7 @@ def think(seq, blob, f):
 
 def expected(f):
     e = f.get("expect", "")
-    if e == "intact" or (e.startswith("refused:") and e[8:].replace("_", "").isalpha()):
+    if e == "intact" or e in {"refused:" + code for code in UNPOOL_CODES}:
         return e
     raise web.Refusal("bad_loop", f"expect {e!r}")
 

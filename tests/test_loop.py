@@ -102,6 +102,9 @@ class Loop(unittest.TestCase):
             {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "3,1"}},
             {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 9, "oligos": "1"}},
             {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "burn", "file": 0}},
+            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "-1"}},
+            {"hypothesis": {"expect": "refused:gapp", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "0"}},
+            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "reads", "file": 0, "sha256": "0" * 64, "path": "a b.fa"}},
         ):
             with self.subTest(step=step), self.assertRaises(web.Refusal):
                 loop.run(self.seq, [step])
