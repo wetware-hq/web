@@ -48,7 +48,8 @@
         "web": { "path": "samples/astronaut-64.cgr.web", "root": "a625eef4b23e7223c2e5478ae4390d48fb3a67fb61c0530ec97feb0d54ff78b5", "bytes": 8850, "psnr": 36.36 }
       },
       "pool": { "cipher": "pool1", "path": "samples/astronaut-64.pool.fa", "file": 0, "oligos": 2002, "oligo_nt": 117, "nt": 234234, "sha256": "2262ca0409fb1bfdc0c9efbf4ec79c89955984edbf4ef60641d417c14c0badea", "gc": [0.3846, 0.6068], "longest_run": 1 },
-      "glyph": { "format": "cgr1", "path": "samples/astronaut-64.cgr3.txt", "k": 3, "counts": "685a51199776fb3be09e79b8ab0981067d8e6a5f09b47d99ffb1f6f6cad84bc8" }
+      "glyph": { "format": "cgr1", "path": "samples/astronaut-64.cgr3.txt", "k": 3, "counts": "685a51199776fb3be09e79b8ab0981067d8e6a5f09b47d99ffb1f6f6cad84bc8" },
+      "loop": { "format": "loop1", "reference": "ref/loop.py", "plan": "samples/astronaut-64.loop.json", "path": "samples/astronaut-64.loop.txt", "sha256": "5dea5f6e291e2d34d88007a433c55d127eb9abd90e165dcc9b317da93e66cfe5", "head": "a8958ddcdd641039cfcc43e7b1f8bd7543d71d1a785bb10b4b6f6f07ab8e2232", "verdicts": { "6": "refutes", "9": "supports", "12": "supports" } }
     }
   ]
 }

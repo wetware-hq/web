@@ -14,7 +14,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
   "reads": ["DISCLAIMER", "web.json", "ooc/web.og"],
   "writes": [],
   "must": ["one canonical byte form", "decode is the only normative direction", "never rewrite a committed web", "match codes, not prose"],
-  "check": ["W1-W8", "D1-D13"]
+  "check": ["W1-W8", "D1-D16"]
 }
 ```
 
@@ -36,6 +36,7 @@ pins = "web.json"              # sample roots, fidelity and chain
 index = "ooc/web.og"           # ObjectGraph traversal index
 ref = "ref/web.py"             # reference decoder (normative) and encoder (one valid fit)
 dna = "ref/dna.py"             # dna1 cipher §9, pool1 oligos §10, cgr1 glyph §11; both directions normative
+loop = "ref/loop.py"           # loop1 pseudovisual chain of thought §12; replay is normative
 commit = "systems/commit-web.md"
 ```
 
@@ -142,6 +143,10 @@ Agents match on codes, never on message text.
 | `gap` | no valid pool1 read covers some base (§10) |
 | `tie` | the valid pool1 reads covering a base disagree with no majority (§10) |
 | `bad_pool` | the voted pool1 sequence's length trailer or padding is inconsistent (§10) |
+| `bad_loop` | a loop1 file breaks the §12 grammar: header, numbering, frame order, a parameter, or a reads path outside the loop's directory |
+| `bad_head` | a loop1 `%head` is not the hash chain of its blocks (§12) |
+| `mismatch` | a loop1 frame differs from what its parameters and the data regenerate (§12) |
+| `hash_drift` | a reads file named by a loop1 `act` no longer hashes to its pinned sha256 (§12) |
 
 ## §6 Fidelity
 
@@ -259,6 +264,40 @@ unpool(reads, id):
 | D12 | every pinned glyph in `web.json` equals `glyph` of its sequence |
 | D13 | for every cell, the k-mer spelled by its labels is present in the sequence exactly when the cell is not a space |
 
+## §12 Pseudovisual chain of thought `loop1`
+
+`loop1` is a chain of thought about one dna1 sequence in which every step is a text picture, not prose: `think` views the data, `hypothesis` draws a prediction in the same form, `act` runs one replayable experiment and `observe` shows what it gave. It follows `Loop(DATA%web) { think CHAIN<%web>, HYPOTHESES; act EXPERIMENTS; }`. `ref/loop.py` is the reference; replay is normative.
+
+```text { type: notebook.cell }
+loop    := header frame* head                       # every line ends with LF
+header  := "%loop1 nt=" n " sequence=" sha256(ascii(seq)) " web=" root(decipher(seq))
+frame   := "%frame " i " " kind " " params, then its body lines; i counts from 0
+kind    := think | hypothesis act observe            # a hypothesis is always followed by its act, then its observe
+think       view=web size=<1-64>  -> view1 body     # the web's render, block-mean luminance, " .:-=+*#%@" dark to bright
+think       view=cgr k=<1-6>      -> cgr1 glyph §11
+hypothesis  expect=intact k=<1-6> -> cgr1 glyph of the data at k: the picture it predicts
+hypothesis  expect=refused:gap|tie|bad_pool k=<1-6> -> no body: it predicts unpool refuses with that §5 code
+act         op=lose   file=<0-8> oligos=<distinct ascending pool indices >= 0, comma-joined>
+act         op=damage file=<0-8> seed=<u63> drop=<per mille> sub=<per mille> flip=<per mille>
+act         op=reads  file=<0-8> sha256=<hex of the reads file> path=<[A-Za-z0-9._/-]+, under the loop file's directory>
+observe     outcome=refused:<code> verdict=<v>                                   -> no body
+observe     outcome=intact|changed sequence=<hex> used=<n> dropped=<n> verdict=<v>  -> cgr1 glyph at the hypothesis k, then a diff
+head    := "%head " h_n, h_0 = sha256("loop1"), h_(j+1) = sha256(h_j raw || block j)   # header, then each frame block, as ASCII
+```
+
+- **Act.** Every op ends in `unpool` (§10). `lose` drops the listed oligos of `pool(seq, file)`. `damage` draws `u(j, s)` = the first 8 bytes (big-endian) of `sha256("loop1/damage" || u64be(seed) || u64be(j) || u64be(s))` and hits when `u * 1000 < rate * 2^64`: slot 0 drops oligo `j`, slot `2 + p` substitutes base `p` with `ACGT[(index + 1 + (u >> 32) mod 3) mod 4]`, and slot 1 reads the oligo from the other strand. `reads` unpools a file of real sequencing reads, pinned by hash, so a wet-lab read-back is a loop too.
+- **Verdict.** The outcome is `refused:<code>`, `intact` (the unpooled sequence is the data) or `changed`. The verdict is `supports` when the outcome equals `expect`, else `refutes`. It is computed, never written by the agent.
+- **Diff.** `%diff k=<k> changed=<cells>/<4^k>` and a `%key` line, then the §11 frame with one character per cell: space absent in both, `=` same count, `+` more, `-` fewer, `!` appeared, `?` vanished.
+- **No prose.** Every line is a fixed-grammar header or a picture an agent addresses by k-mer or by grid cell. A loop says only what its data and its experiments regenerate.
+- **Head.** The head names the whole loop and is 32 bytes, so it fits a `bytes32`. A `Bases` print `receipt` is the head of the print's read-back loop (`wetware-hq/bases`): its last hypothesis is `expect=intact`, its act is `op=reads` on the print's sequencing reads, and anyone holding the loop, the sequence and the reads can replay it.
+- **Sample.** `samples/astronaut-64.loop.txt`, from `samples/astronaut-64.loop.json`, refutes "pool1 survives 2% oligo loss and 0.1% substitutions" (`tie`: bases covered by only two oligos cannot outvote one error), supports the revised "loss alone is survivable", and supports "losing oligo 0 is a gap" (the first 25 bases are in one oligo).
+
+| Id | Predicate |
+|---|---|
+| D14 | every pinned loop in `web.json` replays byte for byte from its sequence and hashes to its pinned head |
+| D15 | a loop's head equals the §12 chain over its blocks, so changing any byte of any frame changes the head |
+| D16 | every verdict equals `supports` exactly when the replayed outcome equals the hypothesis `expect` |
+
 ## Citations
 
 - Universal approximation: Cybenko 1989, Hornik 1991 (`docs/pin-sources.md` §Theory).
@@ -273,6 +312,7 @@ unpool(reads, id):
 - Two decodes of one web on one machine differ.
 - `python ref/web.py check samples/astronaut-64.web samples/astronaut-64.png` prints a PSNR more than 0.01 dB from `web.json`.
 - `python ref/dna.py decipher samples/astronaut-64.fa out.web` writes bytes other than `samples/astronaut-64.web`.
+- `python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt` refuses, or prints a head other than `web.json`.
 
 ## Licence
 
