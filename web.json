@@ -3,6 +3,8 @@
   "extension": ".web",
   "media_type": "application/vnd.web",
   "fileformat": "web.md",
+  "primitive": "dna.md",
+  "stack": "docs/organize-stack.md",
   "spec": "docs/follow-agent-contract.md",
   "reference": "ref/web.py",
   "chain": null,

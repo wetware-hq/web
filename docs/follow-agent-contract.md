@@ -22,6 +22,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
 
 - ← [read-repository.md](read-repository.md)
 - → [pin-sources.md](pin-sources.md)
+- → [organize-stack.md](organize-stack.md)
 - → [vary-cybernetics.md](vary-cybernetics.md)
 - → [../skills/encode-media.md](../skills/encode-media.md)
 - → [../skills/decode-web.md](../skills/decode-web.md)
@@ -31,6 +32,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
 
 ```toml { type: notebook.cell }
 format = "web.md"              # the .web file format: extension, media type, magic
+primitive = "dna.md"           # the .dna sequence form: the stack primitive, §13
 store = "*.web"                # canonical bytes, §2
 pins = "web.json"              # sample roots, fidelity and chain
 index = "ooc/web.og"           # ObjectGraph traversal index
@@ -38,6 +40,7 @@ ref = "ref/web.py"             # reference decoder (normative) and encoder (one 
 dna = "ref/dna.py"             # dna1 cipher §9, pool1 oligos §10, cgr1 glyph §11; both directions normative
 loop = "ref/loop.py"           # loop1 pseudovisual chain of thought §12; replay is normative
 commit = "systems/commit-web.md"
+stack = "docs/organize-stack.md"  # where each repository sits over the primitive, §13
 ```
 
 ## Indications
@@ -61,6 +64,8 @@ commit = "systems/commit-web.md"
 | **web** | the canonical bytes of one network (§2) | yes |
 | **root** | `sha256(web)` as 64 lowercase hex digits | yes |
 | **render** | `decode(web)` (§3), a media array | yes, up to §3 note |
+| **sequence** | one non-empty ASCII string over `ACGT`, the stack primitive (`dna.md`, §9, §13) | yes |
+| **sequence root** | `sha256(ascii(seq))`; on chain `sha256(salt \|\| ascii(seq))` with a 32-byte salt | yes |
 | **fidelity** | PSNR in dB of a render against its pinned source media | a measurement, not a property of the bytes |
 
 ## §1 Flow
@@ -298,6 +303,45 @@ head    := "%head " h_n, h_0 = sha256("loop1"), h_(j+1) = sha256(h_j raw || bloc
 | D15 | a loop's head equals the §12 chain over its blocks, so changing any byte of any frame changes the head |
 | D16 | every verdict equals `supports` exactly when the replayed outcome equals the hypothesis `expect` |
 
+## §13 Stack
+
+The stack is one primitive with layers over it. A **sequence** (§0) is the primitive: one ASCII string over `ACGT`, named by `dna.md` and defined here. Everything the stack calls DNA is that object. `docs/organize-stack.md` maps which repository holds which layer; this section is what binds them.
+
+```text { type: notebook.cell }
+media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two-way
+                                   |--cgr1/loop1--> glyph, loop     # views, one-way
+                                   |--tess1------->  plan            # wetware-hq/tesseract
+                                   +--salted root-> token            # wetware-hq/bases --> helix page
+```
+
+| Object | Named by | Computed |
+|---|---|---|
+| web | web root | `sha256(web bytes)` (§4) |
+| sequence | sequence root | `sha256(ascii(seq))`, or `sha256(salt \|\| ascii(seq))` on chain (§9) |
+| oligo pool | pool digest | `sha256` of the pool file, over the sequence root it rebuilds (§10) |
+| glyph | counts root | `sha256` of the k-mer counts (§11) |
+| loop | head | the frame hash chain (§12) |
+| plan | plan root | `sha256` of the canonical `.tess` bytes (`wetware-hq/tesseract`) |
+| token | chain root and length | the mint commitment (`wetware-hq/bases`) |
+| page | locus root | the fold over a page's claims (`wetware-hq/helix`) |
+
+- **One primitive.** A `dna1` sequence (§9), a `pool1` oligo (§10) and a target or part of a build plan are sequences under extra constraints, not other formats. A layer may narrow what is valid; it may not widen the alphabet, change the record form, or accept `N`, a gap or lower case.
+- **One root rule.** Nothing in the stack hashes a sequence another way. A salt is 32 bytes and is kept with the sequence, never on chain (§9).
+- **No crossed names.** The values in the table above name different objects. A reader given one where another is required refuses (`root_mismatch`), and never tries the other interpretation.
+- **Bases stay in sequence files.** Only a `.dna` record and a pool file hold bases. A token holds a root and a length, a page holds claims, and a glyph, a diff and a loop hold counts and hashes. Nothing above the sequence layer stores a base, so an agent can hold, print and cite a chromosome it cannot read.
+- **Two-way or a view.** `web ↔ dna1` and `sequence ↔ pool1` reproduce their input exactly. `media → web` is a measured approximation (§6), and a glyph or a loop is regenerated from the sequence, never read back into one (§1).
+- **Refuse, never guess.** Every conversion returns what the data determines or a §5 code. No layer repairs another layer's object.
+- **Pin a neighbour.** A repository in the stack cites and pins its neighbours by commit; it never vendors their files (`docs/pin-sources.md`). web holds the lowest layer that stores a sequence, so it needs no neighbour at run time.
+
+| Id | Predicate |
+|---|---|
+| S1 | every sequence anywhere in this repository matches `dna.md` §1: non-empty, one record, `ACGT` only |
+| S2 | every root of a sequence in `web.json` equals `sha256(ascii(seq))`; no other sequence hash is pinned |
+| S3 | no pinned value is cited under two names, and no check accepts one root in place of another |
+| S4 | no file outside `*.fa` and a pool file holds a base of a pinned sequence |
+| S5 | `decipher(encipher(b)) == b` and `unpool(pool(seq)) == seq`; a glyph or a loop is regenerated, not stored as data |
+| S6 | every refused conversion returns a §5 code and no output |
+
 ## Citations
 
 - Universal approximation: Cybenko 1989, Hornik 1991 (`docs/pin-sources.md` §Theory).
@@ -312,6 +356,7 @@ head    := "%head " h_n, h_0 = sha256("loop1"), h_(j+1) = sha256(h_j raw || bloc
 - Two decodes of one web on one machine differ.
 - `python ref/web.py check samples/astronaut-64.web samples/astronaut-64.png` prints a PSNR more than 0.01 dB from `web.json`.
 - `python ref/dna.py decipher samples/astronaut-64.fa out.web` writes bytes other than `samples/astronaut-64.web`.
+- A sequence in the stack is hashed two different ways, or a token, a page, a glyph or a loop is found holding bases (§13).
 - `python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt` refuses, or prints a head other than `web.json`.
 
 ## Licence
