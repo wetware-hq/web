@@ -65,7 +65,8 @@ stack = "docs/organize-stack.md"  # where each repository sits over the primitiv
 | **root** | `sha256(web)` as 64 lowercase hex digits | yes |
 | **render** | `decode(web)` (§3), a media array | yes, up to §3 note |
 | **sequence** | one non-empty ASCII string over `ACGT`, the stack primitive (`dna.md`, §9, §13) | yes |
-| **sequence root** | `sha256(ascii(seq))`; on chain `sha256(salt \|\| ascii(seq))` with a 32-byte salt | yes |
+| **sequence root** | `sha256(ascii(seq))` | yes |
+| **chain root** | `sha256(salt \|\| ascii(seq))` with a 32-byte salt: Bases `root`, helix `sequence-root` | yes, with the salt |
 | **fidelity** | PSNR in dB of a render against its pinned source media | a measurement, not a property of the bytes |
 
 ## §1 Flow
@@ -317,16 +318,17 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 | Object | Named by | Computed |
 |---|---|---|
 | web | web root | `sha256(web bytes)` (§4) |
-| sequence | sequence root | `sha256(ascii(seq))`, or `sha256(salt \|\| ascii(seq))` on chain (§9) |
+| sequence | sequence root | `sha256(ascii(seq))` (§9) |
+| sequence on chain | chain root | `sha256(salt \|\| ascii(seq))` (§9); Bases `root`, helix `sequence-root` |
 | oligo pool | pool digest | `sha256` of the pool file, over the sequence root it rebuilds (§10) |
 | glyph | counts root | `sha256` of the k-mer counts (§11) |
 | loop | head | the frame hash chain (§12) |
 | plan | plan root | `sha256` of the canonical `.tess` bytes (`wetware-hq/tesseract`) |
-| token | chain root and length | the mint commitment (`wetware-hq/bases`) |
+| token | token id | the chain root and length it was minted with (`wetware-hq/bases`) |
 | page | locus root | the fold over a page's claims (`wetware-hq/helix`) |
 
 - **One primitive.** A `dna1` sequence (§9), a `pool1` oligo (§10) and a target or part of a build plan are sequences under extra constraints, not other formats. A layer may narrow what is valid; it may not widen the alphabet, change the record form, or accept `N`, a gap or lower case.
-- **One root rule.** Nothing in the stack hashes a sequence another way. A salt is 32 bytes and is kept with the sequence, never on chain (§9).
+- **One root rule.** Nothing in the stack hashes a sequence another way. A salt is 32 bytes and is kept with the sequence, never on chain (§9). The sequence root and the chain root of one sequence differ, and only a holder of the salt can show they name the same sequence; so an off-chain object that names a sequence (a plan target, a loop header) carries the sequence root and reaches a chromosome by token id, never by comparing it with the chain root.
 - **No crossed names.** The values in the table above name different objects. A reader given one where another is required refuses (`root_mismatch`), and never tries the other interpretation.
 - **Bases stay in sequence files.** Only a `.dna` record and a pool file hold bases. A token holds a root and a length, a page holds claims, and a glyph, a diff and a loop hold counts and hashes. Nothing above the sequence layer stores a base, so an agent can hold, print and cite a chromosome it cannot read.
 - **Two-way or a view.** `web ↔ dna1` and `sequence ↔ pool1` reproduce their input exactly. `media → web` is a measured approximation (§6), and a glyph or a loop is regenerated from the sequence, never read back into one (§1).

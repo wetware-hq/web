@@ -53,7 +53,7 @@ Across the wetware stack, DNA means one thing: a single sequence over `ACGT`, na
 | `arr<oligo>` (`pool1`) | web | pool digest |
 | CGR (`cgr1`, `loop1`) | web | counts root, loop head |
 | build plan (`.tess`) | [tesseract](https://github.com/wetware-hq/tesseract) | plan root |
-| web3 coin (chromosome token) | [bases](https://github.com/wetware-hq/bases) | salted sequence root and length |
+| web3 coin (chromosome token) | [bases](https://github.com/wetware-hq/bases) | chain root (salted) and length |
 | wiki commit (`dna:` page) | [helix](https://github.com/wetware-hq/helix) | locus root |
 
 Only sequence files hold bases. A token, a page, a glyph and a loop hold roots and counts, so a chromosome can be held, printed and cited by agents that never see its sequence. `tests/test_stack.py` checks this repository against those rules.

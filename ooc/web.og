@@ -5,7 +5,7 @@ updated: 2026-11-26
 domain: web|shallow-nn|universal-approximator|media|on-chain|dna-primitive|stack
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:4bcacfeee0a34ef4c98e78cc262f49b09953c03e2dd05b60ad66364d50648b1e
+checksum: sha256:7a0fb78c7ade7194dfa4609a9c240f460aba370281c3320ad4a23053d57120b7
 ::end
 
 ::schema
@@ -17,7 +17,7 @@ scope-levels: [all, encoder, decoder, committer]
 ::index
 # id | type | scope | conf | keywords
 banner | meta | all | 1.00 | academic, lossy, not-provenance
-seq | primitive | all | 1.00 | dna.md, .dna, ACGT, sequence-root, salted-chain-root, S1-S6
+seq | primitive | all | 1.00 | dna.md, .dna, ACGT, sequence-root, chain-root (salted; bases root, helix sequence-root), S1-S6
 stack | map | all | 1.00 | tesseract, web, bases, helix, boundary-values, no-crossed-names
 contract | stage | all | 1.00 | .web, web1, bytes, decode, root, refusals, fidelity, deep-net-form, W1-W8
 pins | stage | all | 1.00 | cybenko-1989, hornik-1991, siren, coin, functa, dwsnets, astronaut@88431cd9
@@ -240,7 +240,7 @@ Load dna.md, then docs/follow-agent-contract.md §13. dna1, pool1 oligos and tes
 
 ::node [id=stack type=map confidence=1.00 scope=all updated=2026-11-26]
 ::dense
-wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;.dna,sequence-root;pool1;cgr1;loop1)|bases(token,salted-root+length)|helix(dna:,locus-root)
+wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;.dna,sequence-root;pool1;cgr1;loop1)|bases(token,chain-root+length)|helix(dna:,locus-root)
 ::end
 ::full
 Load docs/organize-stack.md. Only roots cross upward; only sequence files hold bases.

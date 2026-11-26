@@ -56,7 +56,7 @@ Reading the column: each row's object is named by exactly one value, and that va
 The normative statement is `docs/follow-agent-contract.md` §13. In short:
 
 - **One primitive (S1).** Anything the stack calls DNA is a sequence as `dna.md` defines it. `dna1`, `pool1` oligos and a `tesseract` target or part are the same object under extra constraints, never a different dialect.
-- **One root rule (S2).** A sequence root is `sha256(ascii(seq))`, and a chain commitment is `sha256(salt || ascii(seq))` with a 32-byte salt. Nothing else hashes a sequence.
+- **One root rule (S2).** A sequence root is `sha256(ascii(seq))`, and a chain root is `sha256(salt || ascii(seq))` with a 32-byte salt. Nothing else hashes a sequence. Bases `root` and helix `sequence-root` are chain roots; a tesseract target and a loop header carry sequence roots. They meet only through a token id, and only a salt holder can show the two roots name one sequence.
 - **No crossed names (S3).** A web root, a sequence root, a counts root, a loop head, a plan root and a locus root name different objects. One is never accepted where another is required.
 - **Bases stay in sequence files (S4).** The chain stores a root and a length. A helix page stores claims about a chromosome. A glyph, a diff and a loop store counts and hashes. None of them stores a base.
 - **Two-way or a view (S5).** `web ↔ dna1` and `sequence ↔ pool1` are exact both ways. `media → web` is a measured approximation, and `sequence → glyph/loop` is a view regenerated on demand. A view is never read back as data: web refuses it by §1, helix by `reverse_flow`.
