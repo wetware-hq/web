@@ -289,20 +289,24 @@ def glyph(seq, k):
         raise web.Refusal("bad_header", "k must be 1-6")
     counts = kmer_counts(seq, k)
     g, n = gray(counts), 1 << k
-    pad = " " * (k + 1)
-    cols = [axis(x, k, "K", "M") for x in range(n)]
     lines = [
         f"%cgr1 k={k} nt={len(seq)} peak={int(counts.max())} present={int((counts > 0).sum())}/{n * n} sequence={seq_root(seq)}",
         f'%ramp "{RAMP}"',
     ]
-    lines += [pad + " " + "".join(c[j] for c in cols) for j in range(k)]
-    lines.append(pad + "C" + "-" * n + "G")
-    for r in range(n):
-        row = "".join(RAMP[0] if v == 0 else RAMP[1 + (int(v) - 1) * (len(RAMP) - 2) // 254] for v in g[r])
-        lines.append(axis(n - 1 - r, k, "S", "W") + " |" + row + "|")
-    lines.append(pad + "A" + "-" * n + "T")
+    lines += grid(k, ["".join(RAMP[0] if v == 0 else RAMP[1 + (int(v) - 1) * (len(RAMP) - 2) // 254] for v in row) for row in g])
     lines.append(f"%counts sha256:{counts_root(counts)}")
     return "\n".join(lines) + "\n"
+
+
+def grid(k, rows):
+    """The labelled cgr1 frame around 2^k rows of 2^k characters: column labels, corners, row labels."""
+    n, pad = 1 << k, " " * (k + 1)
+    cols = [axis(x, k, "K", "M") for x in range(n)]
+    lines = [pad + " " + "".join(c[j] for c in cols) for j in range(k)]
+    lines.append(pad + "C" + "-" * n + "G")
+    lines += [axis(n - 1 - r, k, "S", "W") + " |" + row + "|" for r, row in enumerate(rows)]
+    lines.append(pad + "A" + "-" * n + "T")
+    return lines
 
 
 CELL = {("M", "S"): "C", ("M", "W"): "A", ("K", "S"): "G", ("K", "W"): "T"}
@@ -362,7 +366,12 @@ def write_fasta(path, seq, header):
 
 def read_pool(path):
     """Every record of a FASTA file, as reads; a bad record, even non-ASCII, is kept for unpool to drop."""
-    lines = Path(path).read_bytes().decode("ascii", "replace").splitlines()
+    return parse_pool(Path(path).read_bytes())
+
+
+def parse_pool(data):
+    """read_pool over bytes already in hand, so what is parsed is exactly what was hashed."""
+    lines = data.decode("ascii", "replace").splitlines()
     reads, cur = [], None
     for ln in lines:
         if ln.startswith(">"):

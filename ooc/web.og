@@ -1,11 +1,11 @@
 ::meta
 title: web route and file index
-version: 2
+version: 3
 updated: 2026-11-26
 domain: web|shallow-nn|universal-approximator|media|on-chain
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:d1f8bf3b28039cdee172c0cf1446eea3669a486d7f618774ca55fee65e7192a8
+checksum: sha256:760d335330f0da7951445404ab33766b8205367436c556a8bf5ca2daa17413ec
 ::end
 
 ::schema
@@ -27,6 +27,7 @@ web1:3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89 | web | al
 dna1 | system | all | 1.00 | synthetic-dna, rotating-code, no-homopolymer, cgr, bases-root, D1-D6
 pool1 | system | all | 1.00 | oligo-pool, 117nt, 4x-overlap, index-parity, revcomp, majority-vote, D7-D11
 cgr1 | system | all | 1.00 | text-glyph, qr-finder-corners, iupac-axes, counts-root, D12-D13
+loop1 | system | all | 1.00 | pseudovisual-cot, think, hypothesis, act, observe, diff, hash-chain, print-receipt, D14-D16
 stop | assertion | all | 1.00 | rendered, checked, sufficient
 ::end
 
@@ -201,6 +202,23 @@ Load docs/follow-agent-contract.md §11. samples/astronaut-64.cgr3.txt is the k=
 ::end
 ::end
 
+::node [id=loop1 type=system confidence=1.00 scope=all updated=2026-11-26]
+::dense
+ref=ref/loop.py|think=view1,cgr1|hypothesis=intact,refused:code|act=lose,damage,reads|observe=glyph+diff|verdict=computed|head=sha256-chain|bases-receipt|D14-D16
+::end
+::full
+Load docs/follow-agent-contract.md §12. samples/astronaut-64.loop.txt is the sample loop over samples/astronaut-64.fa; its head is pinned in web.json.
+::end
+::edges
+->[:requires] cgr1
+->[:requires] pool1
+->[:refuses] bad_loop
+->[:refuses] bad_head
+->[:refuses] mismatch
+->[:refuses] hash_drift
+::end
+::end
+
 ::node [id=stop type=assertion confidence=1.00 scope=all updated=2026-11-26]
 ::dense
 render-written|check-passed|halt
@@ -211,5 +229,6 @@ render-written|check-passed|halt
 ::dense
 v1=web1-format|reference-decoder|astronaut-64-sample
 v2=dna1-cipher|cgr|astronaut-64-dna
+v3=loop1-pseudovisual-cot|astronaut-64-loop
 ::end
 ::end

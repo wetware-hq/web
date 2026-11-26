@@ -1,0 +1,134 @@
+%loop1 nt=50105 sequence=f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1 web=3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89
+%frame 0 think view=web size=16
+%view1 size=16 grid=64x64 web=3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89
+%ramp " .:-=+*#%@"
++----------------+
+|:+**##**###%+-*+|
+|.-**#+=+-###+-*+|
+|.:***-++.+##==**|
+|:-*##=#*-*##+-#*|
+|::*##*#**%%%*-##|
+|*:=#:.+=#%%%*-##|
+|*=:+=.  .#%%##**|
+|-+++-:. :+%#==++|
+|:=++=..-:-++-:--|
+|:=+++=---==-    |
+|*++=++=====-:   |
+|#++==+=+*=.:=*= |
+|++=-++-++.    =.|
+|:=+-=--=+  - : :|
+|:-=+=+=+-  . - .|
+|-:==.+=-=      .|
++----------------+
+%levels sha256:92976bee914900d9b4f87d60356503d5635b55b968867f3f31be4b57b5dbe0e5
+%frame 1 think view=cgr k=1
+%cgr1 k=1 nt=50105 peak=12661 present=4/4 sequence=f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1
+%ramp " .:-=+*#%@"
+   MK
+  C--G
+S |@%|
+W |%%|
+  A--T
+%counts sha256:2289d7f4a2b63b3c2e29a1ec65af9e39d815fb2a910b6d61893fb5aec2998889
+%frame 2 think view=cgr k=2
+%cgr1 k=2 nt=50105 peak=5039 present=12/16 sequence=f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1
+%ramp " .:-=+*#%@"
+    MKMK
+    MMKK
+   C----G
+SS | *@ |
+WS |%#**|
+SW |**#%|
+WW | %* |
+   A----T
+%counts sha256:03ee66a50e99a85aa106789f71bbce22c31c74ce675f7da9ebf46ac00b137240
+%frame 3 think view=cgr k=3
+%cgr1 k=3 nt=50105 peak=1971 present=36/64 sequence=f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1
+%ramp " .:-=+*#%@"
+     MKMKMKMK
+     MMKKMMKK
+     MMMMKKKK
+    C--------G
+SSS |  #  #  |
+WSS |  ++%#  |
+SWS |##*#+++*|
+WWS | @+  #+ |
+SSW | +#  +@ |
+WSW |#+++#*#*|
+SWW |  #%++  |
+WWW |  *  #  |
+    A--------T
+%counts sha256:685a51199776fb3be09e79b8ab0981067d8e6a5f09b47d99ffb1f6f6cad84bc8
+%frame 4 hypothesis expect=intact k=3
+%cgr1 k=3 nt=50105 peak=1971 present=36/64 sequence=f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1
+%ramp " .:-=+*#%@"
+     MKMKMKMK
+     MMKKMMKK
+     MMMMKKKK
+    C--------G
+SSS |  #  #  |
+WSS |  ++%#  |
+SWS |##*#+++*|
+WWS | @+  #+ |
+SSW | +#  +@ |
+WSW |#+++#*#*|
+SWW |  #%++  |
+WWW |  *  #  |
+    A--------T
+%counts sha256:685a51199776fb3be09e79b8ab0981067d8e6a5f09b47d99ffb1f6f6cad84bc8
+%frame 5 act op=damage file=0 seed=0 drop=20 sub=1 flip=500
+%frame 6 observe outcome=refused:tie verdict=refutes
+%frame 7 hypothesis expect=intact k=3
+%cgr1 k=3 nt=50105 peak=1971 present=36/64 sequence=f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1
+%ramp " .:-=+*#%@"
+     MKMKMKMK
+     MMKKMMKK
+     MMMMKKKK
+    C--------G
+SSS |  #  #  |
+WSS |  ++%#  |
+SWS |##*#+++*|
+WWS | @+  #+ |
+SSW | +#  +@ |
+WSW |#+++#*#*|
+SWW |  #%++  |
+WWW |  *  #  |
+    A--------T
+%counts sha256:685a51199776fb3be09e79b8ab0981067d8e6a5f09b47d99ffb1f6f6cad84bc8
+%frame 8 act op=damage file=0 seed=0 drop=20 sub=0 flip=500
+%frame 9 observe outcome=intact sequence=f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1 used=1970 dropped=0 verdict=supports
+%cgr1 k=3 nt=50105 peak=1971 present=36/64 sequence=f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1
+%ramp " .:-=+*#%@"
+     MKMKMKMK
+     MMKKMMKK
+     MMMMKKKK
+    C--------G
+SSS |  #  #  |
+WSS |  ++%#  |
+SWS |##*#+++*|
+WWS | @+  #+ |
+SSW | +#  +@ |
+WSW |#+++#*#*|
+SWW |  #%++  |
+WWW |  *  #  |
+    A--------T
+%counts sha256:685a51199776fb3be09e79b8ab0981067d8e6a5f09b47d99ffb1f6f6cad84bc8
+%diff k=3 changed=0/64
+%key "=+-!?" same more fewer appeared vanished
+     MKMKMKMK
+     MMKKMMKK
+     MMMMKKKK
+    C--------G
+SSS |  =  =  |
+WSS |  ====  |
+SWS |========|
+WWS | ==  == |
+SSW | ==  == |
+WSW |========|
+SWW |  ====  |
+WWW |  =  =  |
+    A--------T
+%frame 10 hypothesis expect=refused:gap k=3
+%frame 11 act op=lose file=0 oligos=0
+%frame 12 observe outcome=refused:gap verdict=supports
+%head a8958ddcdd641039cfcc43e7b1f8bd7543d71d1a785bb10b4b6f6f07ab8e2232

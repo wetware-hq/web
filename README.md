@@ -52,6 +52,17 @@ The `pool1` layer (contract §10) splits that sequence into 2,002 oligos of 117 
 
 The `cgr1` glyph (contract §11) prints the chaos-game grid as plain text an agent can read, with labelled corners and axes and a hash of the counts, like the finder patterns and check value on a QR code ([`samples/astronaut-64.cgr3.txt`](samples/astronaut-64.cgr3.txt)).
 
+## Thinking in pictures: `loop1`
+
+A `loop1` file (contract §12, [`ref/loop.py`](ref/loop.py)) is a chain of thought about a sequence in which every step is a text picture an agent can read, not prose. It **thinks** by viewing the data (the web's image as a 16 × 16 character grid, then `cgr1` glyphs at k = 1, 2, 3), states a **hypothesis** as the picture it expects to see or the refusal it expects, **acts** with one replayable experiment on the oligo pool, and **observes** the result with a diff grid. The verdict is computed, and the frames are hash-chained, so the 32-byte head names the whole loop and can be a `Bases` print receipt.
+
+The sample loop ([`samples/astronaut-64.loop.txt`](samples/astronaut-64.loop.txt)) found a real limit of `pool1`: 0.1% substitutions already cause a `tie` where only two oligos cover a base, while 2% oligo loss alone is survivable.
+
+```sh
+python ref/loop.py run    samples/astronaut-64.fa samples/astronaut-64.loop.json my.loop.txt
+python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt   # replay every act; verdicts and head
+```
+
 ```sh
 python ref/dna.py pool samples/astronaut-64.fa pool.fa        # 117-nt oligos
 python ref/dna.py unpool pool.fa seq.fa                       # back to the sequence, by majority vote
@@ -73,6 +84,7 @@ python ref/dna.py glyph samples/astronaut-64.fa --k 3         # text CGR
 | [`systems/commit-web.md`](systems/commit-web.md) | Putting a web on chain and reading it back. |
 | [`ref/web.py`](ref/web.py) | The reference encoder and decoder (Python + numpy). |
 | [`ref/dna.py`](ref/dna.py) | The `dna1` cipher: web ↔ synthetic DNA, plus chaos-game images. |
+| [`ref/loop.py`](ref/loop.py) | The `loop1` pseudovisual chain of thought: think, hypothesize, act, observe. |
 | [`web.json`](web.json) | Pins for the sample: source hash, web root, size and PSNR, and its DNA sequence. |
 | [`ooc/web.og`](ooc/web.og) | A compact map of the files, for agents that traverse links. |
 
