@@ -8,6 +8,7 @@ Verdicts are computed, never written. Frames are hash-chained, so the head names
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -128,7 +129,9 @@ def run_act(seq, f, base):
         rates = [num(f, key, 0, PER) for key in ("drop", "sub", "flip")]
         reads = damage(dna.pool(seq, file_id), num(f, "seed", 0, 2**63 - 1), *rates)
     elif op == "reads":
-        p = (base / f.get("path", "")).resolve()
+        if not re.fullmatch(r"[A-Za-z0-9._/-]+", f.get("path", "")):
+            raise web.Refusal("bad_loop", f"reads path {f.get('path')!r} is not [A-Za-z0-9._/-]+")
+        p = (base / f["path"]).resolve()
         if not p.is_relative_to(base.resolve()) or not p.is_file():
             raise web.Refusal("bad_loop", f"no reads file {f.get('path')}")
         if hashlib.sha256(p.read_bytes()).hexdigest() != f.get("sha256"):
