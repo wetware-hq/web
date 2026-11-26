@@ -1,3 +1,4 @@
 *.web binary
 *.png binary
 /ooc/web.og text eol=lf
+/samples/*.loop.txt text eol=lf
