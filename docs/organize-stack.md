@@ -33,7 +33,7 @@ wetware-hq
               .dna   sequence  ◀─────────┘      │          (the primitive; this repository defines it)
                      oligos  arr<oligo>         │          pool1 §10
                      glyph, loop                │          cgr1 §11, loop1 §12
-  bases       token  chromosome, ERC-721  ◀─────┘          (sequence root + length, the web3 coin)
+  bases       token  chromosome, ERC-721  ◀─────┘          (chain root + length, the web3 coin)
   helix       page   dna:<token id>                        (the wiki commit; reads the token, never the sequence)
 ```
 
