@@ -287,7 +287,7 @@ def main(argv=None):
     try:
         if a.cmd == "run":
             plan = json.loads(Path(a.plan).read_text())
-            text = run(dna.read_fasta(a.fasta), plan, Path(a.plan).resolve().parent)
+            text = run(dna.read_fasta(a.fasta), plan, Path(a.out).resolve().parent)
             if Path(a.out).exists():
                 raise web.Refusal("exists", a.out)
             with open(a.out, "x", encoding="ascii", newline="\n") as f:
