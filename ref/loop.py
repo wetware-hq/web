@@ -136,6 +136,8 @@ def run_act(seq, f, base):
         p = (base / f["path"]).resolve()
         if not p.is_relative_to(base.resolve()) or not p.is_file():
             raise web.Refusal("bad_loop", f"no reads file {f.get('path')}")
+        if not re.fullmatch(r"[0-9a-f]{64}", f.get("sha256", "")):
+            raise web.Refusal("bad_loop", "reads sha256 is not 64 lowercase hex")
         data = p.read_bytes()
         if hashlib.sha256(data).hexdigest() != f.get("sha256"):
             raise web.Refusal("hash_drift", f"{f.get('path')} does not hash to its pin")
@@ -198,9 +200,11 @@ def run(seq, plan, base=Path(".")):
     def params(d):
         return " ".join(f"{k}={v}" for k, v in d.items())
 
+    if not isinstance(plan, list):
+        raise web.Refusal("bad_loop", "a plan is a list of steps")
     for step in plan:
         i = len(blocks) - 1
-        if not isinstance(step, dict) or set(step) not in ({"think"}, {"hypothesis", "act"}):
+        if not isinstance(step, dict) or set(step) not in ({"think"}, {"hypothesis", "act"}) or not all(isinstance(v, dict) for v in step.values()):
             raise web.Refusal("bad_loop", "a step is {think} or {hypothesis, act}")
         if "think" in step:
             t = {k: str(v) for k, v in step["think"].items()}
@@ -264,7 +268,7 @@ def verify(text, seq, base=Path(".")):
         if kind == "think":
             plan.append({"think": f})
             i += 1
-        elif kind == "hypothesis" and i + 2 < len(frames) and frames[i + 1][1:2] == ["act"] and frames[i + 2][1:2] == ["observe"]:
+        elif kind == "hypothesis" and i + 2 < len(frames) and frames[i + 1][:2] == [str(i + 1), "act"] and frames[i + 2][:2] == [str(i + 2), "observe"]:
             a = dict(p.split("=", 1) for p in frames[i + 1][2:] if "=" in p)
             plan.append({"hypothesis": f, "act": a})
             verdicts.append((i + 2, dict(p.split("=", 1) for p in frames[i + 2][2:] if "=" in p).get("verdict")))

@@ -108,9 +108,23 @@ class Loop(unittest.TestCase):
             {"think": {"view": "cgr", "k": 2}, "hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "1"}},
             {"hypothesis": {"expect": "intact", "k": 1}},
             {},
+            {"think": None},
+            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "reads", "file": 0, "path": "astronaut-64.pool.fa"}},
         ):
             with self.subTest(step=step), self.assertRaises(web.Refusal):
                 loop.run(self.seq, [step])
+
+    def test_plan_is_a_list(self):
+        for plan in ({}, None, "x"):
+            with self.subTest(plan=plan):
+                refuses(self, "bad_loop", loop.run, self.seq, plan)
+
+    def test_misnumbered_experiment_is_bad_loop(self):
+        text = path("samples/astronaut-64.loop.txt").read_text()
+        for kind in ("act", "observe"):
+            n = next(ln for ln in text.splitlines() if ln.startswith("%frame") and ln.split()[2] == kind).split()[1]
+            with self.subTest(kind=kind):
+                refuses(self, "bad_loop", loop.verify, rehead(text.replace(f"%frame {n} {kind}", f"%frame 9{n} {kind}", 1)), self.seq)
 
     def test_unused_view_params_are_dropped(self):
         text = loop.run(self.seq, [{"think": {"view": "cgr", "k": 2, "size": "1 2"}}])
