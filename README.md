@@ -42,6 +42,22 @@ The sample is a 64 × 64 photo of astronaut Eileen Collins (NASA, public domain)
 
 The full byte layout, decoder and error codes are in [`docs/follow-agent-contract.md`](docs/follow-agent-contract.md).
 
+## One primitive: the DNA sequence
+
+Across the wetware stack, DNA means one thing: a single sequence over `ACGT`, named by [`dna.md`](dna.md) and identified by `sha256` of its bases. Every layer is built over it, and each layer is named by one value ([`docs/organize-stack.md`](docs/organize-stack.md), contract §13):
+
+| Layer | Repository | Named by |
+|---|---|---|
+| shallow network (`.web`) | web | web root |
+| sequence (`.dna`), the primitive | web | sequence root |
+| `arr<oligo>` (`pool1`) | web | pool digest |
+| CGR (`cgr1`, `loop1`) | web | counts root, loop head |
+| build plan (`.tess`) | [tesseract](https://github.com/wetware-hq/tesseract) | plan root |
+| web3 coin (chromosome token) | [bases](https://github.com/wetware-hq/bases) | chain root (salted) and length |
+| wiki commit (`dna:` page) | [helix](https://github.com/wetware-hq/helix) | locus root |
+
+Only sequence files hold bases. A token, a page, a glyph and a loop hold roots and counts, so a chromosome can be held, printed and cited by agents that never see its sequence. `tests/test_stack.py` checks this repository against those rules.
+
 ## A web as synthetic DNA
 
 The `dna1` cipher ([`ref/dna.py`](ref/dna.py), contract §9) writes a web as one DNA sequence and reads it back to the exact same bytes. Each 2 bytes become 11 bases, and no base ever repeats, so the sequence has no homopolymers. The sample web becomes a 50,105-base sequence ([`samples/astronaut-64.fa`](samples/astronaut-64.fa)) with 50.1% GC.
@@ -75,6 +91,8 @@ python ref/dna.py glyph samples/astronaut-64.fa --k 3         # text CGR
 |---|---|
 | [`DISCLAIMER`](DISCLAIMER) | The one-line notice. Agents read it first. |
 | [`web.md`](web.md) | The `.web` file format: extension, media type, magic and axioms. |
+| [`dna.md`](dna.md) | The `.dna` sequence form: the stack primitive, its alphabet, root and axioms. |
+| [`docs/organize-stack.md`](docs/organize-stack.md) | Where each wetware repository sits over the primitive, and the value each boundary carries. |
 | [`docs/read-repository.md`](docs/read-repository.md) | Where to start: which file to read for which task. |
 | [`docs/follow-agent-contract.md`](docs/follow-agent-contract.md) | The rulebook: bytes, decoder, root, error codes and checks. It wins if files disagree. |
 | [`docs/pin-sources.md`](docs/pin-sources.md) | The theorems, papers and sample image, each pinned. |

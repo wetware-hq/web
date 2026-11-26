@@ -1,15 +1,15 @@
 ::meta
 title: web route and file index
-version: 3
+version: 4
 updated: 2026-11-26
-domain: web|shallow-nn|universal-approximator|media|on-chain
+domain: web|shallow-nn|universal-approximator|media|on-chain|dna-primitive|stack
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:760d335330f0da7951445404ab33766b8205367436c556a8bf5ca2daa17413ec
+checksum: sha256:7a0fb78c7ade7194dfa4609a9c240f460aba370281c3320ad4a23053d57120b7
 ::end
 
 ::schema
-node-types: [stage, skill, system, web, assertion, meta]
+node-types: [stage, skill, system, web, primitive, map, assertion, meta]
 edge-types: [requires, precedes, encodes, refuses]
 scope-levels: [all, encoder, decoder, committer]
 ::end
@@ -17,6 +17,8 @@ scope-levels: [all, encoder, decoder, committer]
 ::index
 # id | type | scope | conf | keywords
 banner | meta | all | 1.00 | academic, lossy, not-provenance
+seq | primitive | all | 1.00 | dna.md, .dna, ACGT, sequence-root, chain-root (salted; bases root, helix sequence-root), S1-S6
+stack | map | all | 1.00 | tesseract, web, bases, helix, boundary-values, no-crossed-names
 contract | stage | all | 1.00 | .web, web1, bytes, decode, root, refusals, fidelity, deep-net-form, W1-W8
 pins | stage | all | 1.00 | cybenko-1989, hornik-1991, siren, coin, functa, dwsnets, astronaut@88431cd9
 cyber | stage | all | 0.50 | receptive-field, sinusoid-basis, closed-loop, hypothesis
@@ -219,6 +221,36 @@ Load docs/follow-agent-contract.md §12. samples/astronaut-64.loop.txt is the sa
 ::end
 ::end
 
+::node [id=seq type=primitive confidence=1.00 scope=all updated=2026-11-26]
+::dense
+alphabet=ACGT|one-record|root=sha256(ascii(seq))|chain=sha256(salt32||ascii(seq))|bases-only-in-.fa/.dna/pool|S1-S6
+::end
+::full
+Load dna.md, then docs/follow-agent-contract.md §13. dna1, pool1 oligos and tess1 parts are this object under extra constraints.
+::end
+::edges
+->[:requires] dna.md
+->[:requires] docs/follow-agent-contract.md
+->[:precedes] dna1
+->[:precedes] stack
+->[:refuses] bad_base
+->[:refuses] root_mismatch
+::end
+::end
+
+::node [id=stack type=map confidence=1.00 scope=all updated=2026-11-26]
+::dense
+wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;.dna,sequence-root;pool1;cgr1;loop1)|bases(token,chain-root+length)|helix(dna:,locus-root)
+::end
+::full
+Load docs/organize-stack.md. Only roots cross upward; only sequence files hold bases.
+::end
+::edges
+->[:requires] docs/organize-stack.md
+->[:requires] seq
+::end
+::end
+
 ::node [id=stop type=assertion confidence=1.00 scope=all updated=2026-11-26]
 ::dense
 render-written|check-passed|halt
@@ -230,5 +262,6 @@ render-written|check-passed|halt
 v1=web1-format|reference-decoder|astronaut-64-sample
 v2=dna1-cipher|cgr|astronaut-64-dna
 v3=loop1-pseudovisual-cot|astronaut-64-loop
+v4=dna-primitive|stack-map|S1-S6
 ::end
 ::end

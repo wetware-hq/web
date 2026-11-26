@@ -29,6 +29,7 @@ Read `DISCLAIMER` before any node. Then take the first row that covers the task 
 | Task | Path |
 |---|---|
 | Know what a `.web` file is | `web.md` |
+| Know what a DNA sequence is in this stack | `dna.md` |
 | Turn an image into a web | contract → `skills/encode-media.md` |
 | Turn a web back into an image | contract §3 → `skills/decode-web.md` |
 | Check a web file or its claimed fidelity | contract §5–§7 → `skills/decode-web.md` §Check |
@@ -39,6 +40,7 @@ Read `DISCLAIMER` before any node. Then take the first row that covers the task 
 | Split a sequence into oligos, or rebuild it from reads | contract §10 → `ref/dna.py pool`/`unpool` |
 | Read a sequence's k-mer profile as text | contract §11 → `ref/dna.py glyph` |
 | Reason about a sequence in pictures, run an experiment, or check a print receipt | contract §12 → `ref/loop.py` |
+| Place a repository in the stack, or cross a repository boundary | `docs/organize-stack.md` → contract §13 |
 | Traverse without reading prose | `ooc/web.og` |
 | Anything else, or a conflict | `docs/follow-agent-contract.md` |
 
@@ -54,6 +56,7 @@ flowchart LR
     E --> X
     X --> S[commit-web]
     C --> V[vary-cybernetics]
+    C --> M[organize-stack]
 ```
 
 ## Licence
