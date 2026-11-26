@@ -135,9 +135,10 @@ def run_act(seq, f, base):
         p = (base / f["path"]).resolve()
         if not p.is_relative_to(base.resolve()) or not p.is_file():
             raise web.Refusal("bad_loop", f"no reads file {f.get('path')}")
-        if hashlib.sha256(p.read_bytes()).hexdigest() != f.get("sha256"):
+        data = p.read_bytes()
+        if hashlib.sha256(data).hexdigest() != f.get("sha256"):
             raise web.Refusal("hash_drift", f"{f.get('path')} does not hash to its pin")
-        reads = dna.read_pool(p)
+        reads = dna.parse_pool(data)
     else:
         raise web.Refusal("bad_loop", f"op {op!r}")
     try:
