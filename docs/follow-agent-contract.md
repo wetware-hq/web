@@ -238,7 +238,7 @@ unpool(reads, id):
 | D8 | every oligo is 117 nt, starts with `A` or `T`, ends with `C` or `G`, and repeats no base |
 | D9 | `unpool(pool(seq)) == seq` under any read order, either strand per read, and the loss of any oligos that leaves every base covered |
 | D10 | a substitution in one read is outvoted wherever another two valid reads cover the base |
-| D11 | `unpool` refuses (`gap`, `tie`, `bad_pool`) rather than return a sequence the reads do not determine |
+| D11 | `unpool` refuses (`gap`, `tie`, `homopolymer`, `bad_pool`) rather than return a sequence the reads do not determine |
 
 ## §11 Text glyph `cgr1`
 
@@ -273,10 +273,10 @@ loop    := header frame* head                       # every line ends with LF
 header  := "%loop1 nt=" n " sequence=" sha256(ascii(seq)) " web=" root(decipher(seq))
 frame   := "%frame " i " " kind " " params, then its body lines; i counts from 0
 kind    := think | hypothesis act observe            # a hypothesis is always followed by its act, then its observe
-think       view=web size=<1-64>  -> view1 body     # the web's render, block-mean luminance, " .:-=+*#%@" dark to bright
+think       view=web size=<1-64, at most the shorter grid side>  -> view1 body     # the web's render, block-mean luminance, " .:-=+*#%@" dark to bright
 think       view=cgr k=<1-6>      -> cgr1 glyph §11
 hypothesis  expect=intact k=<1-6> -> cgr1 glyph of the data at k: the picture it predicts
-hypothesis  expect=refused:gap|tie|bad_pool k=<1-6> -> no body: it predicts unpool refuses with that §5 code
+hypothesis  expect=refused:gap|tie|homopolymer|bad_pool k=<1-6> -> no body: it predicts unpool refuses with that §5 code
 act         op=lose   file=<0-8> oligos=<distinct ascending pool indices >= 0, comma-joined>
 act         op=damage file=<0-8> seed=<u63> drop=<per mille> sub=<per mille> flip=<per mille>
 act         op=reads  file=<0-8> sha256=<hex of the reads file> path=<[A-Za-z0-9._/-]+, under the loop file's directory>

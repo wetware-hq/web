@@ -105,9 +105,21 @@ class Loop(unittest.TestCase):
             {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "-1"}},
             {"hypothesis": {"expect": "refused:gapp", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "0"}},
             {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "reads", "file": 0, "sha256": "0" * 64, "path": "a b.fa"}},
+            {"think": {"view": "cgr", "k": 2}, "hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "1"}},
+            {"hypothesis": {"expect": "intact", "k": 1}},
+            {},
         ):
             with self.subTest(step=step), self.assertRaises(web.Refusal):
                 loop.run(self.seq, [step])
+
+    def test_unused_view_params_are_dropped(self):
+        text = loop.run(self.seq, [{"think": {"view": "cgr", "k": 2, "size": "1 2"}}])
+        self.assertIn("%frame 0 think view=cgr k=2\n", text)
+        self.assertEqual(loop.verify(text, self.seq), [])
+
+    def test_every_unpool_refusal_can_be_predicted(self):
+        for code in ("gap", "tie", "homopolymer", "bad_pool"):
+            self.assertEqual(loop.expected({"expect": "refused:" + code}), "refused:" + code)
 
     def test_view_is_text(self):
         v = loop.view(path("samples/astronaut-64.web").read_bytes(), 8)
