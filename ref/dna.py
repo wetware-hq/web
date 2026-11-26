@@ -366,7 +366,12 @@ def write_fasta(path, seq, header):
 
 def read_pool(path):
     """Every record of a FASTA file, as reads; a bad record, even non-ASCII, is kept for unpool to drop."""
-    lines = Path(path).read_bytes().decode("ascii", "replace").splitlines()
+    return parse_pool(Path(path).read_bytes())
+
+
+def parse_pool(data):
+    """read_pool over bytes already in hand, so what is parsed is exactly what was hashed."""
+    lines = data.decode("ascii", "replace").splitlines()
     reads, cur = [], None
     for ln in lines:
         if ln.startswith(">"):

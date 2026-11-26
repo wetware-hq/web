@@ -22,8 +22,9 @@ TAG = b"loop1"
 VIEW_RAMP = " .:-=+*#%@"  # web view: space = darkest, "@" = brightest
 DIFF = {"same": "=", "more": "+", "fewer": "-", "appeared": "!", "vanished": "?"}
 OPS = {"lose": ("file", "oligos"), "damage": ("file", "seed", "drop", "sub", "flip"), "reads": ("file", "sha256", "path")}
+VIEWS = {"web": ("size",), "cgr": ("k",)}
 PER = 1000  # damage rates are per mille
-UNPOOL_CODES = ("gap", "tie", "bad_pool")
+UNPOOL_CODES = ("gap", "tie", "homopolymer", "bad_pool")  # unvoting can join two equal bases
 
 
 def chain(blocks):
@@ -135,9 +136,10 @@ def run_act(seq, f, base):
         p = (base / f["path"]).resolve()
         if not p.is_relative_to(base.resolve()) or not p.is_file():
             raise web.Refusal("bad_loop", f"no reads file {f.get('path')}")
-        if hashlib.sha256(p.read_bytes()).hexdigest() != f.get("sha256"):
+        data = p.read_bytes()
+        if hashlib.sha256(data).hexdigest() != f.get("sha256"):
             raise web.Refusal("hash_drift", f"{f.get('path')} does not hash to its pin")
-        reads = dna.read_pool(p)
+        reads = dna.parse_pool(data)
     else:
         raise web.Refusal("bad_loop", f"op {op!r}")
     try:
@@ -198,9 +200,11 @@ def run(seq, plan, base=Path(".")):
 
     for step in plan:
         i = len(blocks) - 1
+        if not isinstance(step, dict) or set(step) not in ({"think"}, {"hypothesis", "act"}):
+            raise web.Refusal("bad_loop", "a step is {think} or {hypothesis, act}")
         if "think" in step:
             t = {k: str(v) for k, v in step["think"].items()}
-            p = {"view": t.get("view", ""), **{key: t[key] for key in ("size", "k") if key in t}}
+            p = {"view": t.get("view", ""), **{key: t[key] for key in VIEWS.get(t.get("view"), ()) if key in t}}
             blocks.append(block(i, "think", params(p), think(seq, blob, p)))
             continue
         h = {k: str(v) for k, v in step["hypothesis"].items()}
