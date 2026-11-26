@@ -122,7 +122,7 @@ def run_act(seq, f, base):
             lost = {int(i) for i in f["oligos"].split(",")}
         except (KeyError, ValueError):
             raise web.Refusal("bad_loop", "oligos") from None
-        if f["oligos"] != ",".join(map(str, sorted(lost))) or max(lost) >= len(oligos):
+        if f["oligos"] != ",".join(map(str, sorted(lost))) or min(lost) < 0 or max(lost) >= len(oligos):
             raise web.Refusal("bad_loop", "oligos must be ascending pool indices")
         reads = [o for i, o in enumerate(oligos) if i not in lost]
     elif op == "damage":
