@@ -23,7 +23,7 @@ def path(p):
 
 
 def mapped(m):
-    return tensor.of_file(m["kind"], path(m["of"]), m.get("k", 3), m.get("file"))
+    return tensor.of_file(m["kind"], path(m["of"]), m.get("k", 3))
 
 
 try:
@@ -43,22 +43,17 @@ class Samples(unittest.TestCase):
             if "path" in m:
                 self.assertEqual(Path(path(m["path"])).read_bytes(), blob)
 
-    def test_exact_maps_invert(self):  # T2
+    def test_exact_maps_invert(self):  # T1
         for m in MAPS:
             blob = mapped(m)
-            if m["kind"] == "web":
-                self.assertEqual(tensor.to_web(blob), Path(path(m["of"])).read_bytes())
-            elif m["kind"] == "sequence":
+            if m["kind"] == "sequence":
                 self.assertEqual(tensor.to_sequence(blob), dna.read_fasta(path(m["of"])))
-            elif m["kind"] == "pool":
+            elif m["exact"]:
                 self.assertEqual(tensor.inverse(blob), Path(path(m["of"])).read_bytes())
-            elif m["kind"] == "media":
-                self.assertTrue(np.array_equal(tensor.to_media(blob), web.read_png(path(m["of"]))))
             else:
-                self.assertFalse(m["exact"])
                 with self.assertRaises(web.Refusal) as ctx:
                     tensor.inverse(blob)
-                self.assertEqual(ctx.exception.code, "view")
+                self.assertEqual(ctx.exception.code, "kind_mismatch")
 
     def test_weights_are_the_web_bytes(self):
         w = PINS["webs"][0]
@@ -82,7 +77,7 @@ class Samples(unittest.TestCase):
         written = {i: tensor.VERDICTS[v] for i, v in s["loop"]["verdicts"].items()}
         self.assertEqual({str(i): int(v) for i, v in enumerate(t["verdict"]) if v}, written)
 
-    def test_no_tensor_root_under_another_name(self):  # T4
+    def test_no_tensor_root_under_another_name(self):  # T3
         others = {w["root"] for w in PINS["webs"]} | {s["sequence"] for s in PINS["dna"]}
         self.assertFalse(others & {m["root"] for m in MAPS})
 
@@ -97,7 +92,7 @@ class Format(unittest.TestCase):
             tensor.unpack(blob, kind)
         self.assertEqual(ctx.exception.code, code)
 
-    def test_canonical(self):  # T2
+    def test_canonical(self):  # T1
         kind, t = tensor.unpack(self.blob)
         self.assertEqual(list(t), ["a", "b", "c"])
         self.assertEqual(tensor.pack(kind, t), self.blob)
@@ -105,43 +100,29 @@ class Format(unittest.TestCase):
         self.assertEqual(tensor.pack(kind, {"b": self.t["b"].astype(">i4"), "a": self.t["a"], "c": self.t["c"]}), self.blob)
         self.assertEqual(self.blob[:13], b"tmap1\x05probe\x03\x00")
 
-    def test_refusals(self):  # T5
+    def test_refusals(self):  # T3
         self.refused(b"tmap2" + self.blob[5:], "bad_magic")
         self.refused(self.blob[:-1], "truncated")
         self.refused(self.blob + b"\0", "trailing_bytes")
         self.refused(self.blob, "kind_mismatch", "web")
-        swapped = self.blob.replace(b"\x01a", b"\x01d", 1)
-        self.refused(swapped, "bad_order")
+        self.refused(self.blob.replace(b"\x01a", b"\x01d", 1), "bad_map")  # names out of order
         a = self.blob.index(b"\x01a") + 2
-        self.refused(self.blob[:a] + b"\x07" + self.blob[a + 1 :], "bad_dtype")
-        nan = self.blob[: a + 2] + struct.pack("<e", float("nan")) + self.blob[a + 4 :]
-        self.refused(nan, "bad_value")
-        self.refused(self.blob[:-1] + b"\x02", "bad_value")
-        for t, code in (({"x": np.array(-0.0)}, "bad_value"), ({"x": np.array(["s"])}, "bad_dtype"), ({"X": np.zeros(1)}, "bad_name"), ({}, "bad_count")):
+        self.refused(self.blob[:a] + b"\x07" + self.blob[a + 1 :], "bad_map")  # DT_STRING
+        self.refused(self.blob[: a + 2] + struct.pack("<e", float("nan")) + self.blob[a + 4 :], "bad_map")
+        self.refused(self.blob[:-1] + b"\x02", "bad_map")  # bool 2
+        for kind, t in (("probe", {"x": np.array(-0.0)}), ("probe", {"x": np.array(["s"])}), ("probe", {"X": np.zeros(1)}),
+                        ("probe", {}), ("w\u00e9b", {"x": np.zeros(1)}), ("probe", {"\u00e9": np.zeros(1)})):
             with self.assertRaises(web.Refusal) as ctx:
-                tensor.pack("probe", t)
-            self.assertEqual(ctx.exception.code, code)
+                tensor.pack(kind, t)
+            self.assertEqual(ctx.exception.code, "bad_map")
 
     def test_pool_refusals(self):
         oligos = dna.pool(dna.read_fasta(path([m for m in MAPS if m["kind"] == "sequence"][0]["of"])), 2)
-        self.assertEqual(tensor.unpack(tensor.of_pool(oligos))[1]["file"], 2)
-        with self.assertRaises(web.Refusal) as ctx:  # a map never relabels a pool
-            tensor.of_pool(oligos, 0)
-        self.assertEqual(ctx.exception.code, "bad_file")
-        blob = tensor.of_pool(oligos)
-        t = tensor.unpack(blob)[1]
-        for bad, code in ((np.array(0, np.uint8), "bad_file"), (np.array(9, np.uint8), "bad_file")):
+        t = tensor.unpack(tensor.of_pool(oligos))[1]
+        self.assertEqual(t["file"], 2)  # read from the oligos, never relabelled
+        for file, rows, code in ((0, t["oligos"], "bad_file"), (9, t["oligos"], "bad_file"), (2, t["oligos"][:0], "bad_pool")):
             with self.assertRaises(web.Refusal) as ctx:
-                tensor.to_pool(tensor.pack("pool", {"file": bad, "oligos": t["oligos"]}))
-            self.assertEqual(ctx.exception.code, code)
-        with self.assertRaises(web.Refusal) as ctx:
-            tensor.to_pool(tensor.pack("pool", {"file": t["file"], "oligos": t["oligos"][:0]}))
-        self.assertEqual(ctx.exception.code, "bad_pool")
-
-    def test_non_ascii_names_refuse_with_a_code(self):
-        for kind, name, code in (("w\u00e9b", "x", "bad_kind"), ("probe", "\u00e9", "bad_name")):
-            with self.assertRaises(web.Refusal) as ctx:
-                tensor.pack(kind, {name: np.zeros(1)})
+                tensor.to_pool(tensor.pack("pool", {"file": np.uint8(file), "oligos": rows}))
             self.assertEqual(ctx.exception.code, code)
 
     def test_sequence_refusals(self):
@@ -155,7 +136,7 @@ class Format(unittest.TestCase):
 
 
 @unittest.skipIf(tf is None, "tensorflow is not installed; CI installs tensorflow-cpu")
-class TensorFlow(unittest.TestCase):  # T3
+class TensorFlow(unittest.TestCase):  # T2
     def test_dtype_numbers_are_tensorflow(self):
         for code, np_dtype in tensor.DTYPES.items():
             d = tf.dtypes.as_dtype(code)

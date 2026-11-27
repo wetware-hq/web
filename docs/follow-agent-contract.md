@@ -14,7 +14,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
   "reads": ["DISCLAIMER", "web.json", "ooc/web.og"],
   "writes": [],
   "must": ["one canonical byte form", "decode is the only normative direction", "never rewrite a committed web", "match codes, not prose"],
-  "check": ["W1-W8", "D1-D16", "S1-S7", "T1-T6"]
+  "check": ["W1-W8", "D1-D16", "S1-S7", "T1-T4"]
 }
 ```
 
@@ -155,16 +155,8 @@ Agents match on codes, never on message text.
 | `bad_head` | a loop1 `%head` is not the hash chain of its blocks (§12) |
 | `mismatch` | a loop1 frame differs from what its parameters and the data regenerate (§12) |
 | `hash_drift` | a reads file named by a loop1 `act` no longer hashes to its pinned sha256 (§12) |
-| `bad_kind` | a tensor map's kind is not `[a-z][a-z0-9-]{0,31}`, or is not a kind the reader maps (§14) |
-| `kind_mismatch` | a tensor map of one kind is given where another kind is required (§14) |
-| `bad_count` | a tensor map has no record or more than 1,024 (§14) |
-| `bad_name` | a tensor name is not `[a-z][a-z0-9_]{0,63}` (§14) |
-| `bad_order` | tensor names are not strictly ascending (§14) |
-| `bad_dtype` | a dtype byte is not one of the §14 TensorFlow `DataType` numbers |
-| `bad_shape` | a tensor's rank is over 8 or a dimension does not fit a u32 (§14) |
-| `bad_value` | a float tensor holds NaN, infinity or negative zero, or a bool holds a byte other than 0 or 1 (§14) |
-| `bad_map` | a tensor map's names, dtypes or shapes are not the ones its kind defines (§14) |
-| `view` | a view map (`glyph`, `loop`) is asked to invert to data (§14) |
+| `bad_map` | a tensor map breaks §14: its kind, a name, the name order, a dtype, a rank, a value, or the names and ranks its kind defines (§14) |
+| `kind_mismatch` | a tensor map of one kind is given where another kind is required, or a view map is asked to invert (§14) |
 
 ## §6 Fidelity
 
@@ -375,36 +367,30 @@ root    := sha256(tmap), cited tmap1:<root>
 ```
 
 - **TensorFlow is the type system.** A record is a `TensorProto` written flat: `dtype`, `tensor_shape` and `tensor_content`. `ref/tensor.py` `to_tf` builds each record's proto and parses it with `tf.io.parse_tensor`; `from_tf` writes `tf.Tensor`s back to the same bytes. Strings, complex numbers, resources and variants are not tensor-map dtypes: anything a map needs is a number, a bool or a root.
-- **One byte form.** A rank-0 record is a scalar. A float is finite and not negative zero; a bool is 0 or 1; nothing follows the last record. A parser accepts `b` only if `pack(unpack(b)) == b`. A file is at most 2^30 bytes.
+- **One byte form.** A rank-0 record is a scalar. A float is finite and not negative zero; a bool is 0 or 1; nothing follows the last record. A parser accepts `b` only if `pack(unpack(b)) == b`. A file is at most 2^30 bytes. Every break of these rules is `bad_map`; `bad_magic`, `truncated`, `trailing_bytes` and `too_large` keep their §5 meaning.
 - **Roots.** A 32-byte root in a map is a `uint8 [32]` tensor. The tensor root names the map, not the object: `tmap1:<root>` is never accepted where a web root, a sequence root or any other §13 name is required, nor one kind's map where another kind is required (`kind_mismatch`).
-- **Exact or a view.** An exact map inverts to its object byte for byte. A view map, like the view it maps (§13, S5), is regenerated from data and never read back.
+- **Exact or a view.** An exact map inverts to its object byte for byte. A view map, like the view it maps (§13, S5), is regenerated from data and never read back (`kind_mismatch`).
 
 | Kind | Tensors (`name dtype [shape]`) | Map | Owner |
 |---|---|---|---|
-| `media` | `media uint8 grid+(d,)` | exact (the §0 array) | web |
 | `web` | `activation uint8 []`, `omega0 uint16 []`, `grid uint16 [r]`, `w1 float16 [r,H]`, `b1 float16 [H]`, `w2 float16 [H,H]`, `b2 float16 [H]`, `w3 float16 [H,d]`, `b3 float16 [d]` | exact; the six weight contents are the web's own §2 weight bytes | web |
 | `sequence` | `bases uint8 [nt]`, values `0-3` index `ACGT` | exact; one-hot is the view `tf.one_hot(bases, 4)` | web |
 | `pool` | `file uint8 []`, `oligos uint8 [m,117]` in pool order | exact; inverts to the `ref/dna.py pool` file | web |
 | `glyph` | `counts int64 [2^k,2^k]` (§11 grid, row 0 first), `k uint8 []` | view; `counts_root(counts)` is the §11 counts root | web |
 | `loop` | `chain uint8 [b+1,32]` (h_0 … head over b blocks), `kind uint8 [f]` (0 think, 1 hypothesis, 2 act, 3 observe), `verdict uint8 [f]` (0 none, 1 supports, 2 refutes) | view; `chain[-1]` is the §12 head | web |
 | `plan` | the `.tess` tree as tensors | defined by `wetware-hq/tesseract` | tesseract |
-| `token` | a chromosome token's chain state | defined by `wetware-hq/bases` | bases |
-| `page` | a `dna:` or other locus as claim tensors | defined by `wetware-hq/helix` | helix |
+| `token` | a chromosome token's chain state: roots and counts | defined by `wetware-hq/bases` | bases |
 | `order` | a print sale's escrow state | defined by `wetware-hq/med3` | med3 |
-| `ledger` | a research ledger | defined by `wetware-hq/popper` | popper |
-| `frame` | a writing frame and its choices | defined by `wetware-hq/tulip` | tulip |
 | `board` | a forum's message multigraph | defined by `wetware-hq/agora` | agora |
 
-A repository that owns a kind defines its tensors in its own contract, under these bytes and rules, and pins this section by commit. It never adds a dtype, a second map for one kind, or a tensor that holds bases unless its object is a sequence or a pool.
+A repository that owns a kind defines its tensors in its own contract and adds its row here when it ships, under these bytes and rules, and pins this section by commit. It never adds a dtype, a second map for one kind, or a tensor that holds bases unless its object is a sequence or a pool.
 
 | Id | Predicate |
 |---|---|
-| T1 | every map pinned in `web.json` `tensors` is the map of its object and hashes to its pinned root |
-| T2 | `pack(unpack(b)) == b` for every accepted `b`; every exact map inverts to its object |
-| T3 | every dtype number is TensorFlow's `DataType`, and TensorFlow parses every record to a tensor of the same dtype, shape and values |
-| T4 | no tensor root is pinned or accepted under another name, and a reader of one kind refuses every other kind |
-| T5 | every refused map returns a §5 code and no output |
-| T6 | only `sequence` and `pool` maps hold bases |
+| T1 | every map pinned in `web.json` `tensors` is the map of its object, hashes to its pinned root, and `pack(unpack(b)) == b`; every exact map inverts to its object |
+| T2 | every dtype number is TensorFlow's `DataType`, and TensorFlow parses every record to a tensor of the same dtype, shape and values |
+| T3 | no tensor root is pinned under another name, a reader of one kind refuses every other kind, and every refused map returns a §5 code and no output |
+| T4 | only `sequence` and `pool` maps hold bases |
 
 ## Citations
 

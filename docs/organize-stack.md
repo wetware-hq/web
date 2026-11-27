@@ -39,7 +39,7 @@ wetware-hq
 
 | Layer | Repository | Object | Value that crosses the boundary | Tensor map (§14) |
 |---|---|---|---|---|
-| media | `web` | a uint8 grid (an image) | `sha256` of the source file | `media`, exact |
+| media | `web` | a uint8 grid (an image) | `sha256` of the source file | — (mapped as its web) |
 | shallow network | `web` | `.web` weights, 2 hidden layers of sine units | **web root** `sha256(bytes)` (§4) | `web`, exact |
 | **sequence** | `web` | one `ACGT` record, the primitive | **sequence root** `sha256(ascii(seq))` (§9) | `sequence`, exact |
 | oligo pool | `web` | `arr<oligo>`, 117-nt indexed oligos | `sha256` of the pool file, plus the sequence root it rebuilds (§10) | `pool`, exact |

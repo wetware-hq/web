@@ -60,7 +60,6 @@
     "reference": "ref/tensor.py",
     "dtypes": "tensorflow/core/framework/types.proto DataType",
     "maps": [
-      { "kind": "media", "of": "samples/astronaut-64.png", "root": "70ebeda124ecaa45b0885ffe99f65492dc62e5eb35334ff9f5be057cf89e4bbe", "bytes": 12321, "exact": true },
       { "kind": "web", "of": "samples/astronaut-64.web", "path": "samples/astronaut-64.web.tmap", "root": "84fc45b63f7c5c110e8945950f2030a4b89d0d1f57e010d889ddd8f347d42166", "bytes": 9211, "exact": true },
       { "kind": "sequence", "of": "samples/astronaut-64.fa", "root": "b86758eda7a4ca4ecbc7eebc22be274d2e182a1d9ee82e626aa7cd6a7c493ebb", "bytes": 50133, "exact": true },
       { "kind": "pool", "of": "samples/astronaut-64.pool.fa", "file": 0, "root": "5a2d633556bf08d255e16552d4e9a03aa0b3af2a85762b0d0b09ecca23825ffc", "bytes": 234271, "exact": true },

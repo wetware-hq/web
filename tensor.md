@@ -1,6 +1,6 @@
 # `.tmap`
 
-A tensor map is the middle layer of the wetware stack: every object any layer stores (a web, a sequence, an oligo pool, a glyph, a loop, a build plan, a token, a page) has exactly one form as a set of named tensors, so one deep net, one TensorFlow graph or one checker reads every layer with the same reader. A `.tmap` file is that set written in one canonical byte form, and `sha256` of its bytes is its **tensor root**. This page names the file form; [`docs/follow-agent-contract.md`](docs/follow-agent-contract.md) §14 defines it and governs on any conflict.
+A tensor map is the middle layer of the wetware stack: every object any layer stores (a web, a sequence, an oligo pool, a glyph, a loop, a build plan, a token, an order, a board) has exactly one form as a set of named tensors, so one deep net, one TensorFlow graph or one checker reads every layer with the same reader. A `.tmap` file is that set written in one canonical byte form, and `sha256` of its bytes is its **tensor root**. This page names the file form; [`docs/follow-agent-contract.md`](docs/follow-agent-contract.md) §14 defines it and governs on any conflict.
 
 ```toml
 [tmap]
@@ -13,7 +13,7 @@ spec       = "docs/follow-agent-contract.md"
 reference  = "ref/tensor.py"
 
 [pipeline]
-input   = "object --one layer's stored object { media, .web, .dna, pool1, cgr1, loop1; .tess, token, page in their repositories }"
+input   = "object --one layer's stored object { .web, .dna, pool1, cgr1, loop1; .tess, token, order, board in their repositories }"
 process = "map { one kind, named tensors in ascending name order, each a TensorProto: DataType, shape, tensor_content }"
 output  = "tensors --fileformat .tmap { root = sha256(bytes), cited tmap1:<root> }"
 ```
