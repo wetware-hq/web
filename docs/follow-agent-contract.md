@@ -380,7 +380,7 @@ root    := sha256(tmap), cited tmap1:<root>
 | `pool` | `file uint8 []`, `oligos uint8 [m,117]` in pool order | exact; inverts to the `ref/dna.py pool` file | web |
 | `glyph` | `counts int64 [2^k,2^k]` (§11 grid, row 0 first), `k uint8 []` | view; `counts_root(counts)` is the §11 counts root | web |
 | `loop` | `chain uint8 [b+1,32]` (h_0 … head over b blocks), `kind uint8 [f]` (0 think, 1 hypothesis, 2 act, 3 observe), `verdict uint8 [f]` (0 none, 1 supports, 2 refutes) | view; `chain[-1]` is the §12 head | web |
-| `state` | `grid uint16 [r]`, `omega0 uint16 []`, `d_out uint8 []`, `step int64 []`, the trainable tensors `float32`, `m_*` and `v_*` `float32` (Adam's moments, one per trainable); with an adapter also `base uint8 [32]`, `rank uint16 []` and the base's six weights `float16` | exact; resumes a fit (§15) | web |
+| `state` | `grid uint16 [r]`, `omega0 uint16 []`, `d_out uint8 []`, `step int64 []`, the trainable tensors `float32`, `m_*` and `v_*` `float32` (Adam's moments, one per trainable); the fit's plan: `learning_rate`, `beta1`, `beta2`, `eps`, `weight_decay`, `grad_clip_norm` `float64 []`, `schedule uint8 []` (0 constant, 1 linear), `total int64 []`, `batch int64 []`, `seed uint64 []`; with an adapter also `base uint8 [32]`, `rank uint16 []` and the base's six weights `float16` | exact; resumes a fit (§15) | web |
 | `adapter` | `base uint8 [32]` (the base web root), `<w>_down float16 [rows,k]` and `<w>_up float16 [k,cols]` for each patched `<w>` of `w1`, `w2`, `w3` | exact; merges into a new web (§15) | web |
 | `plan` | the `.tess` tree as tensors | defined by `wetware-hq/tesseract` | tesseract |
 | `token` | a chromosome token's chain state: roots and counts | defined by `wetware-hq/bases` | bases |

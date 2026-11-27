@@ -48,6 +48,8 @@ class Steps(unittest.TestCase):
         whole = tune.fit(tune.Trainer.fresh(SMALL.shape[:-1], 3, 16, 30, 1), SMALL, 60, p, "linear", 64, 5)
         half = tune.fit(tune.Trainer.fresh(SMALL.shape[:-1], 3, 16, 30, 1), SMALL, 30, p, "linear", 64, 5, total=60)
         resumed = tune.fit(tune.Trainer.from_state(half.save_state()), SMALL)
+        restarted = tune.fit(tune.Trainer.from_state(half.save_state(), with_optimizer=False), SMALL, 1)
+        self.assertEqual(restarted.plan, whole.plan)
         self.assertEqual((resumed.step, resumed.plan), (60, whole.plan))
         self.assertEqual(resumed.save_weights(), whole.save_weights())
 

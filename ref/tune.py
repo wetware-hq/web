@@ -297,7 +297,7 @@ def fit(trainer, media, steps=None, params=None, schedule=None, batch=None, seed
     this fit; give it to a fit that will be resumed. The schedule and each minibatch are keyed by the
     absolute step.
     """
-    plan = trainer.plan if trainer.plan is not None and trainer.step else {}
+    plan = trainer.plan or {}
     params = params if params is not None else plan.get("params", AdamParams())
     schedule = schedule if schedule is not None else plan.get("schedule", "constant")
     batch = batch if batch is not None else plan.get("batch", 0)
