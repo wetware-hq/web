@@ -14,7 +14,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
   "reads": ["DISCLAIMER", "web.json", "ooc/web.og"],
   "writes": [],
   "must": ["one canonical byte form", "decode is the only normative direction", "never rewrite a committed web", "match codes, not prose"],
-  "check": ["W1-W8", "D1-D16", "S1-S7", "T1-T4"]
+  "check": ["W1-W8", "D1-D16", "S1-S7", "T1-T4", "U1-U5"]
 }
 ```
 
@@ -43,6 +43,7 @@ commit = "systems/commit-web.md"
 stack = "docs/organize-stack.md"  # where each repository sits over the primitive, §13
 tensor = "tensor.md"           # the .tmap tensor map: every layer's object as named tensors, §14
 tensors = "ref/tensor.py"      # tmap1 maps §14; TensorFlow DataType codes; exact maps invert
+tune = "ref/tune.py"            # weight manipulation §15: training steps, state and adapter maps, LR rules
 ```
 
 ## Indications
@@ -157,6 +158,7 @@ Agents match on codes, never on message text.
 | `hash_drift` | a reads file named by a loop1 `act` no longer hashes to its pinned sha256 (§12) |
 | `bad_map` | a tensor map breaks §14: its kind, a name, the name order, a dtype, a rank, a value, or the names and ranks its kind defines (§14) |
 | `kind_mismatch` | a tensor map of one kind is given where another kind is required, or a view map is asked to invert (§14) |
+| `no_gradients` | an optimizer step is asked for before any gradients were accumulated (§15) |
 
 ## §6 Fidelity
 
@@ -378,6 +380,8 @@ root    := sha256(tmap), cited tmap1:<root>
 | `pool` | `file uint8 []`, `oligos uint8 [m,117]` in pool order | exact; inverts to the `ref/dna.py pool` file | web |
 | `glyph` | `counts int64 [2^k,2^k]` (§11 grid, row 0 first), `k uint8 []` | view; `counts_root(counts)` is the §11 counts root | web |
 | `loop` | `chain uint8 [b+1,32]` (h_0 … head over b blocks), `kind uint8 [f]` (0 think, 1 hypothesis, 2 act, 3 observe), `verdict uint8 [f]` (0 none, 1 supports, 2 refutes) | view; `chain[-1]` is the §12 head | web |
+| `state` | `grid uint16 [r]`, `omega0 uint16 []`, `d_out uint8 []`, `step int64 []`, the trainable tensors `float32`, `m_*` and `v_*` `float32` (Adam's moments, one per trainable); the fit's plan: `learning_rate`, `beta1`, `beta2`, `eps`, `weight_decay`, `grad_clip_norm` `float64 []`, `schedule uint8 []` (0 constant, 1 linear), `total int64 []`, `batch int64 []`, `seed uint64 []`; with an adapter also `base uint8 [32]`, `rank uint16 []` and the base's six weights `float16` | exact; resumes a fit (§15) | web |
+| `adapter` | `base uint8 [32]` (the base web root), `<w>_down float16 [rows,k]` and `<w>_up float16 [k,cols]` for each patched `<w>` of `w1`, `w2`, `w3` | exact; merges into a new web (§15) | web |
 | `plan` | the `.tess` tree as tensors | defined by `wetware-hq/tesseract` | tesseract |
 | `token` | a chromosome token's chain state: roots and counts | defined by `wetware-hq/bases` | bases |
 | `order` | a print sale's escrow state | defined by `wetware-hq/med3` | med3 |
@@ -392,6 +396,42 @@ A repository that owns a kind defines its tensors in its own contract and adds i
 | T3 | no tensor root is pinned under another name, a reader of one kind refuses every other kind, and every refused map returns a §5 code and no output |
 | T4 | only `sequence` and `pool` maps hold bases |
 
+## §15 Weight manipulation
+
+A web's weights can be changed as well as read. `ref/tune.py` changes them the way the Tinker training API does (`tinker-docs.thinkingmachines.ai`): a `Trainer` holds the weights in binary32, `forward_backward(x, t)` adds the mean-squared-error gradients of one batch to those accumulated since the last step, and `optim_step(p)` makes one AdamW update from them (`learning_rate`, `beta1`, `beta2`, `eps`, `weight_decay`, `grad_clip_norm`) and clears them; a step with nothing accumulated is `no_gradients`. With its defaults (full batch, Adam 0.9/0.999/1e-8, constant rate, no decay or clip) `fit` is the reference encoder `ref/web.py` `encode`: the same seed gives the same bytes.
+
+```text { type: notebook.cell }
+fresh(grid, d, H, omega0, seed)  -> a full fit from `encode`'s initialisation
+from_web(web)                     -> a full fit warm-started from a committed web
+lora(web, k)                      -> an adapter: W' = W + down @ up on w1, w2, w3; up starts at zero, the base is frozen
+from_state(state[, optimizer])    -> resume, or restart Adam's moments and step
+save_weights()  -> web     a canonical web (§2), committed like any other (systems/commit-web.md)
+save_state()    -> state   a tmap1 state map (§14): everything needed to resume
+save_adapter()  -> adapter a tmap1 adapter map (§14): the factors in binary16 and the base root
+merge(web, adapter) -> web W + down @ up in binary64 per patched matrix, then pack (§2): a new web, a new root
+```
+
+- **Webs stay the only stored media.** A state and an adapter are tensor maps, not webs: nothing decodes them (§4). An adapter names its base by web root; `merge` refuses any other base (`root_mismatch`), and its output is a new fit under a new path and root (§7). A committed web is never rewritten.
+- **Weights out are canonical.** Every web the trainer writes goes through `pack`, so binary16 rounding, finiteness and negative zero follow §2 whatever the optimizer did.
+- **Heuristics are measured, not assumed.** Tinker's rules were tuned on language-model fine-tunes; for a 64 × 64 web (H = 64, seed 0, one run each, full batch unless noted) they measure:
+
+| Rule | Measured on `samples/astronaut-64.png` | Use for webs |
+|---|---|---|
+| Tinker's AdamW defaults, `beta2` 0.95, `eps` 1e-12 | 3,000 steps at 1e-3: 25.62 → 29.49 dB (`beta2` alone: 29.37); 10,000 steps: 31.18 → 31.98 dB | yes, for new fits (`--beta2 0.95 --eps 1e-12`); the reference encoder keeps 0.999 so the pinned sample stays reproducible |
+| linear decay to zero | 3,000 steps: 25.62 → 23.97 dB at 1e-3, 28.54 → 26.63 dB at 3e-3 | no |
+| learning rate ∝ √batch (`batch_lr`) | 1,024 of 4,096 rows, 3,000 steps: 22.61 dB at the rule's 5e-4, 23.51 at 1e-3, 24.68 at 2e-3 | no; a smaller batch wanted a larger rate |
+| warm start from the web (full fit) | 2,000 more linear steps: 31.47 dB at 1e-4, 31.48 at 3e-4, 31.76 at 3e-4 with `beta2` 0.95; same 9,110 bytes | yes, to refine a committed web into a new one |
+| LoRA rate 10× the full rate (`lora_lr`) | rank 8, 2,000 linear steps, 1e-4 to 3e-3: 31.21–31.22 dB | untested; the rank limits, not the rate |
+| LoRA rank (`param_count`) | adapter bytes / merged PSNR: rank 8 2,874 / 31.23, 16 4,922 / 31.29, 32 9,018 / 31.44, 64 17,210 / 31.96 dB | an adapter pays only near the size of the web itself; use it to ship a small named patch, not for fidelity |
+
+| Id | Predicate |
+|---|---|
+| U1 | `fit` of a fresh trainer with default parameters writes the bytes `encode` writes for the same media, size, steps and seed |
+| U2 | a fit saved to a state and resumed with its optimizer writes the bytes of one uninterrupted fit of the same total steps; the state keeps the fit's AdamW settings, schedule, horizon (`--total`), batch and seed, and minibatches and the linear rate are keyed by the absolute step |
+| U3 | a rank-k adapter before its first step merges to its base, byte for byte |
+| U4 | `merge(samples/astronaut-64.web, samples/astronaut-64.r8.adapter.tmap)` hashes to the root `web.json` `tune` pins, and decodes within 0.01 dB of its PSNR |
+| U5 | an adapter merged onto any web but its base is `root_mismatch`; a map of another kind is `kind_mismatch`; an adapter missing a factor or with a factor of another dtype or shape is `bad_map` |
+
 ## Citations
 
 - Universal approximation: Cybenko 1989, Hornik 1991 (`docs/pin-sources.md` §Theory).
@@ -399,6 +439,7 @@ A repository that owns a kind defines its tensors in its own contract and adds i
 - Media as network weights: COIN, arXiv:2103.03123.
 - Networks reading weights: functa, arXiv:2201.12204; DWSNets, arXiv:2301.12780.
 - Tensors and their wire form: TensorFlow `DataType` and `TensorProto` (`tensorflow/core/framework/types.proto`, `tensor.proto`; `docs/pin-sources.md` §Tensors).
+- Training API, checkpoints and LoRA heuristics: Tinker (`tinker-docs.thinkingmachines.ai`); LoRA, arXiv:2106.09685; AdamW, arXiv:1711.05101.
 - DNA storage, rotating code and CGR: Goldman et al. 2013; Jeffrey 1990; iCGR, arXiv:1712.04546; JPEG-DNA, arXiv:2103.09616 (`docs/pin-sources.md` §DNA).
 
 ## Falsification
@@ -410,6 +451,7 @@ A repository that owns a kind defines its tensors in its own contract and adds i
 - A sequence in the stack is hashed two different ways, or a token, a page, a glyph or a loop is found holding bases (§13).
 - `python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt` refuses, or prints a head other than `web.json`.
 - `python ref/tensor.py map web samples/astronaut-64.web out.tmap` writes bytes other than `samples/astronaut-64.web.tmap`, or `tf.io.parse_tensor` reads one of its records to another dtype, shape or value (§14).
+- `python ref/tune.py merge samples/astronaut-64.web samples/astronaut-64.r8.adapter.tmap out.web` writes a web whose root is not `web.json` `tune` `merged` (§15).
 
 ## Licence
 

@@ -67,6 +67,14 @@ python ref/tensor.py show out.tmap                                # kind, root a
 python ref/tensor.py unmap out.tmap back.web                      # the same 9,110 bytes
 ```
 
+Weights can be changed as well as read ([`ref/tune.py`](ref/tune.py), contract §15), after the [Tinker](https://tinker-docs.thinkingmachines.ai/tinker/) training API: `forward_backward` and `optim_step`, a resumable `state` map, and LoRA `adapter` maps that merge onto their base web as a new web. Each Tinker heuristic is measured on the sample in §15; Tinker's AdamW `beta2` 0.95 is worth +0.8 dB at 10,000 steps.
+
+```sh
+python ref/tune.py fit samples/astronaut-64.png new.web --beta2 0.95 --eps 1e-12 --state new.state.tmap
+python ref/tune.py fit samples/astronaut-64.png better.web --from-web samples/astronaut-64.web --steps 2000 --lr 3e-4 --beta2 0.95
+python ref/tune.py merge samples/astronaut-64.web samples/astronaut-64.r8.adapter.tmap merged.web
+```
+
 ## A web as synthetic DNA
 
 The `dna1` cipher ([`ref/dna.py`](ref/dna.py), contract §9) writes a web as one DNA sequence and reads it back to the exact same bytes. Each 2 bytes become 11 bases, and no base ever repeats, so the sequence has no homopolymers. The sample web becomes a 50,105-base sequence ([`samples/astronaut-64.fa`](samples/astronaut-64.fa)) with 50.1% GC.
