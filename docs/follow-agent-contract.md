@@ -427,7 +427,7 @@ merge(web, adapter) -> web W + down @ up in binary64 per patched matrix, then pa
 | Id | Predicate |
 |---|---|
 | U1 | `fit` of a fresh trainer with default parameters writes the bytes `encode` writes for the same media, size, steps and seed |
-| U2 | a fit saved to a state and resumed with its optimizer writes the bytes of one uninterrupted fit of the same total steps |
+| U2 | a fit saved to a state and resumed with its optimizer writes the bytes of one uninterrupted fit of the same total steps; the state keeps the fit's AdamW settings, schedule, horizon (`--total`), batch and seed, and minibatches and the linear rate are keyed by the absolute step |
 | U3 | a rank-k adapter before its first step merges to its base, byte for byte |
 | U4 | `merge(samples/astronaut-64.web, samples/astronaut-64.r8.adapter.tmap)` hashes to the root `web.json` `tune` pins, and decodes within 0.01 dB of its PSNR |
 | U5 | an adapter merged onto any web but its base is `root_mismatch`; a map of another kind is `kind_mismatch`; an adapter missing a factor or with a factor of another dtype or shape is `bad_map` |
