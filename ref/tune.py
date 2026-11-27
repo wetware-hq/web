@@ -377,6 +377,11 @@ def main(argv=None):
             write(a.out, out)
             print(web.root(out), len(out))
             return 0
+        if a.state == a.out:
+            raise Refusal("exists", f"{a.out} is both the output and the state")
+        for path in (a.out, a.state):
+            if path and Path(path).exists():
+                raise Refusal("exists", f"{path}; a new fit is a new file")
         media = web.read_png(a.png)
         if a.rank and not a.from_web:
             raise Refusal("bad_header", "--rank needs --from-web, the base the adapter patches")

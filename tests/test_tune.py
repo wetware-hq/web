@@ -136,6 +136,14 @@ class Cli(unittest.TestCase):
             self.assertEqual(tune.main(["fit", png, o("rest.web"), "--from-state", o("half.tmap")]), 0)
             self.assertEqual(Path(o("rest.web")).read_bytes(), Path(o("whole.web")).read_bytes())
 
+    def test_fit_refuses_a_taken_state_path_before_writing(self):
+        png = os.path.join(ROOT, PINS["webs"][0]["media"]["path"])
+        with tempfile.TemporaryDirectory() as d:
+            taken = os.path.join(d, "taken.tmap")
+            Path(taken).write_bytes(b"")
+            self.assertEqual(tune.main(["fit", png, os.path.join(d, "new.web"), "--state", taken, "--steps", "1"]), 1)
+            self.assertFalse(os.path.exists(os.path.join(d, "new.web")))
+
     def test_merge_and_refuse_overwrite(self):
         with tempfile.TemporaryDirectory() as d:
             out = os.path.join(d, "m.web")
