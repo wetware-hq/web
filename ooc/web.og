@@ -1,11 +1,11 @@
 ::meta
 title: web route and file index
-version: 4
-updated: 2026-11-26
-domain: web|shallow-nn|universal-approximator|media|on-chain|dna-primitive|stack
+version: 5
+updated: 2026-11-27
+domain: web|shallow-nn|universal-approximator|media|on-chain|dna-primitive|stack|tensor-map
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:7a0fb78c7ade7194dfa4609a9c240f460aba370281c3320ad4a23053d57120b7
+checksum: sha256:8dd8791a6261994b168cce141cb581a02fc89824717504d812e2cf64d9e18c96
 ::end
 
 ::schema
@@ -30,6 +30,7 @@ dna1 | system | all | 1.00 | synthetic-dna, rotating-code, no-homopolymer, cgr, 
 pool1 | system | all | 1.00 | oligo-pool, 117nt, 4x-overlap, index-parity, revcomp, majority-vote, D7-D11
 cgr1 | system | all | 1.00 | text-glyph, qr-finder-corners, iupac-axes, counts-root, D12-D13
 loop1 | system | all | 1.00 | pseudovisual-cot, think, hypothesis, act, observe, diff, hash-chain, print-receipt, D14-D16
+tmap1 | system | all | 1.00 | tensor-map, .tmap, tensorflow-DataType, TensorProto, tensor-root, exact-or-view, T1-T4
 stop | assertion | all | 1.00 | rendered, checked, sufficient
 ::end
 
@@ -221,6 +222,21 @@ Load docs/follow-agent-contract.md §12. samples/astronaut-64.loop.txt is the sa
 ::end
 ::end
 
+::node [id=tmap1 type=system confidence=1.00 scope=all updated=2026-11-27]
+::dense
+ref=ref/tensor.py|tensor.md|tmap1=kind+named-records|dtype=tensorflow-DataType|record=TensorProto(dtype,shape,tensor_content)|root=sha256(bytes)|exact=web,sequence,pool|view=glyph,loop|neighbours=plan,token,order,board|T1-T4
+::end
+::full
+Load tensor.md, then docs/follow-agent-contract.md §14. Every stack object has exactly one tensor map; samples/astronaut-64.web.tmap is the map of samples/astronaut-64.web and every sample map root is pinned in web.json tensors.
+::end
+::edges
+->[:requires] seq
+->[:requires] contract
+->[:refuses] bad_map
+->[:refuses] kind_mismatch
+::end
+::end
+
 ::node [id=seq type=primitive confidence=1.00 scope=all updated=2026-11-26]
 ::dense
 alphabet=ACGT|one-record|root=sha256(ascii(seq))|chain=sha256(salt32||ascii(seq))|bases-only-in-.fa/.dna/pool|S1-S6
@@ -240,7 +256,7 @@ Load dna.md, then docs/follow-agent-contract.md §13. dna1, pool1 oligos and tes
 
 ::node [id=stack type=map confidence=1.00 scope=all updated=2026-11-26]
 ::dense
-wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;.dna,sequence-root;pool1;cgr1;loop1)|bases(token,chain-root+length)|helix(dna:,locus-root)
+wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;.dna,sequence-root;pool1;cgr1;loop1;.tmap,tensor-root)|bases(token,chain-root+length)|helix(dna:,locus-root)
 ::end
 ::full
 Load docs/organize-stack.md. Only roots cross upward; only sequence files hold bases.
@@ -263,5 +279,6 @@ v1=web1-format|reference-decoder|astronaut-64-sample
 v2=dna1-cipher|cgr|astronaut-64-dna
 v3=loop1-pseudovisual-cot|astronaut-64-loop
 v4=dna-primitive|stack-map|S1-S6
+v5=tmap1-tensor-maps|tensorflow-DataType|S7|T1-T4
 ::end
 ::end

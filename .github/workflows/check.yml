@@ -11,8 +11,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt tensorflow-cpu==2.21.0
       - run: python -c "import json; json.load(open('web.json'))" && test "$(wc -l < DISCLAIMER)" -eq 1
       - run: python -m unittest discover -s tests -v
       - run: python ref/web.py check samples/astronaut-64.web samples/astronaut-64.png --root 3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89 --min-psnr 31
       - run: python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt
+      - run: python ref/tensor.py map web samples/astronaut-64.web /tmp/out.tmap && cmp /tmp/out.tmap samples/astronaut-64.web.tmap

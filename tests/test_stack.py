@@ -56,7 +56,7 @@ class Stack(unittest.TestCase):
 
     def test_s4_bases_stay_in_sequence_files(self):
         for p in tracked():
-            if p.suffix in {".fa", ".dna", ".png", ".web"}:
+            if p.suffix in {".fa", ".dna", ".png", ".web", ".tmap"}:
                 continue
             self.assertIsNone(BASES.search(p.read_text(errors="ignore")), p.name)
 

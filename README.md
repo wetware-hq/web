@@ -53,10 +53,19 @@ Across the wetware stack, DNA means one thing: a single sequence over `ACGT`, na
 | `arr<oligo>` (`pool1`) | web | pool digest |
 | CGR (`cgr1`, `loop1`) | web | counts root, loop head |
 | build plan (`.tess`) | [tesseract](https://github.com/wetware-hq/tesseract) | plan root |
+| any object above, as tensors (`.tmap`) | web ([`tensor.md`](tensor.md)) | tensor root |
 | web3 coin (chromosome token) | [bases](https://github.com/wetware-hq/bases) | chain root (salted) and length |
 | wiki commit (`dna:` page) | [helix](https://github.com/wetware-hq/helix) | locus root |
 
 Only sequence files hold bases. A token, a page, a glyph and a loop hold roots and counts, so a chromosome can be held, printed and cited by agents that never see its sequence. `tests/test_stack.py` checks this repository against those rules.
+
+The universal middle layer is the tensor: every object in the table maps to exactly one set of named TensorFlow tensors ([`tensor.md`](tensor.md), contract §14, [`ref/tensor.py`](ref/tensor.py)). The web, the sequence and the pool maps invert exactly; the glyph and the loop maps are views.
+
+```sh
+python ref/tensor.py map  web samples/astronaut-64.web out.tmap   # = samples/astronaut-64.web.tmap
+python ref/tensor.py show out.tmap                                # kind, root and each tensor's dtype and shape
+python ref/tensor.py unmap out.tmap back.web                      # the same 9,110 bytes
+```
 
 ## A web as synthetic DNA
 
@@ -92,6 +101,7 @@ python ref/dna.py glyph samples/astronaut-64.fa --k 3         # text CGR
 | [`DISCLAIMER`](DISCLAIMER) | The one-line notice. Agents read it first. |
 | [`web.md`](web.md) | The `.web` file format: extension, media type, magic and axioms. |
 | [`dna.md`](dna.md) | The `.dna` sequence form: the stack primitive, its alphabet, root and axioms. |
+| [`tensor.md`](tensor.md) | The `.tmap` tensor map: every stack object as named TensorFlow tensors. |
 | [`docs/organize-stack.md`](docs/organize-stack.md) | Where each wetware repository sits over the primitive, and the value each boundary carries. |
 | [`docs/read-repository.md`](docs/read-repository.md) | Where to start: which file to read for which task. |
 | [`docs/follow-agent-contract.md`](docs/follow-agent-contract.md) | The rulebook: bytes, decoder, root, error codes and checks. It wins if files disagree. |
