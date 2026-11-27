@@ -221,7 +221,7 @@ class Trainer:
         t |= {"m_" + k: clean(a) for k, a in self.m.items()} | {"v_" + k: clean(a) for k, a in self.v.items()}
         if self.plan is not None:
             t |= {n: np.float64(getattr(self.plan["params"], n)) + 0.0 for n in PLAN}
-            t |= {"schedule": np.uint8(SCHEDULES.index(self.plan["schedule"])), "total": np.int64(self.plan["total"]), "batch": np.int64(self.plan["batch"]), "seed": np.int64(self.plan["seed"])}
+            t |= {"schedule": np.uint8(SCHEDULES.index(self.plan["schedule"])), "total": np.int64(self.plan["total"]), "batch": np.int64(self.plan["batch"]), "seed": np.uint64(self.plan["seed"])}
         if self.base is not None:
             t |= {n: f16(p) for n, p in zip(WEIGHTS, web.unpack(self.base)["params"])}
             t |= {"base": np.frombuffer(bytes.fromhex(web.root(self.base)), np.uint8), "rank": np.uint16(self.rank)}
@@ -400,9 +400,10 @@ def main(argv=None):
         p = replace(base, **{k: v for k, v in given.items() if v is not None})
         fit(tr, media, a.steps, p, a.schedule, a.batch, a.seed, a.total)
         out = tr.save_adapter() if tr.base is not None else tr.save_weights()
+        state = tr.save_state() if a.state else None
         write(a.out, out)
-        if a.state:
-            write(a.state, tr.save_state())
+        if state is not None:
+            write(a.state, state)
         merged = tr.save_weights()
         print(f"{'tmap1' if tr.base is not None else 'web1'}:{web.root(out)} bytes {len(out)} psnr {web.psnr(web.decode(merged), media):.2f}")
     except Refusal as err:
