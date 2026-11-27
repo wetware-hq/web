@@ -14,7 +14,7 @@ The wetware repositories are layers over a single primitive: a DNA sequence, one
   "reads": ["dna.md", "web.json", "docs/follow-agent-contract.md"],
   "writes": [],
   "must": ["one primitive", "one root rule per object", "no layer stores another layer's object", "pin a neighbour, never vendor it"],
-  "check": ["S1-S6"]
+  "check": ["S1-S7"]
 }
 ```
 
@@ -37,17 +37,17 @@ wetware-hq
   helix       page   dna:<token id>                        (the wiki commit; reads the token, never the sequence)
 ```
 
-| Layer | Repository | Object | Value that crosses the boundary |
-|---|---|---|---|
-| media | `web` | a uint8 grid (an image) | `sha256` of the source file |
-| shallow network | `web` | `.web` weights, 2 hidden layers of sine units | **web root** `sha256(bytes)` (§4) |
-| **sequence** | `web` | one `ACGT` record, the primitive | **sequence root** `sha256(ascii(seq))` (§9) |
-| oligo pool | `web` | `arr<oligo>`, 117-nt indexed oligos | `sha256` of the pool file, plus the sequence root it rebuilds (§10) |
-| glyph | `web` | `cgr1` k-mer picture, text | **counts root** `sha256` of the counts (§11) |
-| loop | `web` | `loop1` pseudovisual chain of thought | **head**, the frame hash chain (§12) |
-| build plan | `tesseract` | `.tess`, a tree of parts for one target | **plan root** `sha256` of the canonical plan bytes; its target is a sequence root |
-| chromosome token | `bases` | one ERC-721, 1 base … n bases | **chain root** `sha256(salt \|\| ascii(seq))` and the length in bases; print `receipt` is a loop head |
-| wiki commit | `helix` | page `dna:<token id>`, claims about the chromosome | **locus root**, the fold over the page's claims |
+| Layer | Repository | Object | Value that crosses the boundary | Tensor map (§14) |
+|---|---|---|---|---|
+| media | `web` | a uint8 grid (an image) | `sha256` of the source file | `media`, exact |
+| shallow network | `web` | `.web` weights, 2 hidden layers of sine units | **web root** `sha256(bytes)` (§4) | `web`, exact |
+| **sequence** | `web` | one `ACGT` record, the primitive | **sequence root** `sha256(ascii(seq))` (§9) | `sequence`, exact |
+| oligo pool | `web` | `arr<oligo>`, 117-nt indexed oligos | `sha256` of the pool file, plus the sequence root it rebuilds (§10) | `pool`, exact |
+| glyph | `web` | `cgr1` k-mer picture, text | **counts root** `sha256` of the counts (§11) | `glyph`, view |
+| loop | `web` | `loop1` pseudovisual chain of thought | **head**, the frame hash chain (§12) | `loop`, view |
+| build plan | `tesseract` | `.tess`, a tree of parts for one target | **plan root** `sha256` of the canonical plan bytes; its target is a sequence root | `plan` (tesseract) |
+| chromosome token | `bases` | one ERC-721, 1 base … n bases | **chain root** `sha256(salt \|\| ascii(seq))` and the length in bases; print `receipt` is a loop head | `token` (bases) |
+| wiki commit | `helix` | page `dna:<token id>`, claims about the chromosome | **locus root**, the fold over the page's claims | `page` (helix) |
 
 Reading the column: each row's object is named by exactly one value, and that value is what a neighbouring repository stores, pins or commits. A layer that needs a neighbour's object fetches it by that value and checks it; it never recomputes it a second way and never renames it.
 
@@ -61,6 +61,7 @@ The normative statement is `docs/follow-agent-contract.md` §13. In short:
 - **Bases stay in sequence files (S4).** The chain stores a root and a length. A helix page stores claims about a chromosome. A glyph, a diff and a loop store counts and hashes. None of them stores a base.
 - **Two-way or a view (S5).** `web ↔ dna1` and `sequence ↔ pool1` are exact both ways. `media → web` is a measured approximation, and `sequence → glyph/loop` is a view regenerated on demand. A view is never read back as data: web refuses it by §1, helix by `reverse_flow`.
 - **Refuse, never guess (S6).** Every conversion in the stack returns a sequence the data determines, or a stable refusal code.
+- **One tensor map (S7).** Every object above has exactly one `tmap1` tensor map ([`tensor.md`](../tensor.md), §14): named tensors with TensorFlow `DataType`s, named by a **tensor root**. The repository that owns the object defines its map; it is how any layer hands its object to a network. The map's kind is in its bytes, so a tensor root is never taken for another name (S3), and only `sequence` and `pool` maps hold bases (S4).
 
 ## Direction
 

@@ -5,6 +5,7 @@
   "fileformat": "web.md",
   "primitive": "dna.md",
   "stack": "docs/organize-stack.md",
+  "tensor": "tensor.md",
   "spec": "docs/follow-agent-contract.md",
   "reference": "ref/web.py",
   "chain": null,
@@ -53,5 +54,18 @@
       "glyph": { "format": "cgr1", "path": "samples/astronaut-64.cgr3.txt", "k": 3, "counts": "685a51199776fb3be09e79b8ab0981067d8e6a5f09b47d99ffb1f6f6cad84bc8" },
       "loop": { "format": "loop1", "reference": "ref/loop.py", "plan": "samples/astronaut-64.loop.json", "path": "samples/astronaut-64.loop.txt", "sha256": "5dea5f6e291e2d34d88007a433c55d127eb9abd90e165dcc9b317da93e66cfe5", "head": "a8958ddcdd641039cfcc43e7b1f8bd7543d71d1a785bb10b4b6f6f07ab8e2232", "verdicts": { "6": "refutes", "9": "supports", "12": "supports" } }
     }
-  ]
+  ],
+  "tensors": {
+    "format": "tmap1",
+    "reference": "ref/tensor.py",
+    "dtypes": "tensorflow/core/framework/types.proto DataType",
+    "maps": [
+      { "kind": "media", "of": "samples/astronaut-64.png", "root": "70ebeda124ecaa45b0885ffe99f65492dc62e5eb35334ff9f5be057cf89e4bbe", "bytes": 12321, "exact": true },
+      { "kind": "web", "of": "samples/astronaut-64.web", "path": "samples/astronaut-64.web.tmap", "root": "84fc45b63f7c5c110e8945950f2030a4b89d0d1f57e010d889ddd8f347d42166", "bytes": 9211, "exact": true },
+      { "kind": "sequence", "of": "samples/astronaut-64.fa", "root": "b86758eda7a4ca4ecbc7eebc22be274d2e182a1d9ee82e626aa7cd6a7c493ebb", "bytes": 50133, "exact": true },
+      { "kind": "pool", "of": "samples/astronaut-64.pool.fa", "file": 0, "root": "5a2d633556bf08d255e16552d4e9a03aa0b3af2a85762b0d0b09ecca23825ffc", "bytes": 234271, "exact": true },
+      { "kind": "glyph", "of": "samples/astronaut-64.fa", "k": 3, "root": "80a507805931b55f0a173685d94f79d9969191f40b8becf8b4f555167973201f", "bytes": 547, "exact": false },
+      { "kind": "loop", "of": "samples/astronaut-64.loop.txt", "root": "d9c01a77a2049e195a431309daf67ebce0184007f7f73dcfabef990b3934b2e2", "bytes": 559, "exact": false }
+    ]
+  }
 }

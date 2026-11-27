@@ -14,7 +14,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
   "reads": ["DISCLAIMER", "web.json", "ooc/web.og"],
   "writes": [],
   "must": ["one canonical byte form", "decode is the only normative direction", "never rewrite a committed web", "match codes, not prose"],
-  "check": ["W1-W8", "D1-D16"]
+  "check": ["W1-W8", "D1-D16", "S1-S7", "T1-T6"]
 }
 ```
 
@@ -41,6 +41,8 @@ dna = "ref/dna.py"             # dna1 cipher §9, pool1 oligos §10, cgr1 glyph 
 loop = "ref/loop.py"           # loop1 pseudovisual chain of thought §12; replay is normative
 commit = "systems/commit-web.md"
 stack = "docs/organize-stack.md"  # where each repository sits over the primitive, §13
+tensor = "tensor.md"           # the .tmap tensor map: every layer's object as named tensors, §14
+tensors = "ref/tensor.py"      # tmap1 maps §14; TensorFlow DataType codes; exact maps invert
 ```
 
 ## Indications
@@ -153,6 +155,16 @@ Agents match on codes, never on message text.
 | `bad_head` | a loop1 `%head` is not the hash chain of its blocks (§12) |
 | `mismatch` | a loop1 frame differs from what its parameters and the data regenerate (§12) |
 | `hash_drift` | a reads file named by a loop1 `act` no longer hashes to its pinned sha256 (§12) |
+| `bad_kind` | a tensor map's kind is not `[a-z][a-z0-9-]{0,31}`, or is not a kind the reader maps (§14) |
+| `kind_mismatch` | a tensor map of one kind is given where another kind is required (§14) |
+| `bad_count` | a tensor map has no record or more than 1,024 (§14) |
+| `bad_name` | a tensor name is not `[a-z][a-z0-9_]{0,63}` (§14) |
+| `bad_order` | tensor names are not strictly ascending (§14) |
+| `bad_dtype` | a dtype byte is not one of the §14 TensorFlow `DataType` numbers |
+| `bad_shape` | a tensor's rank is over 8 or a dimension does not fit a u32 (§14) |
+| `bad_value` | a float tensor holds NaN, infinity or negative zero, or a bool holds a byte other than 0 or 1 (§14) |
+| `bad_map` | a tensor map's names, dtypes or shapes are not the ones its kind defines (§14) |
+| `view` | a view map (`glyph`, `loop`) is asked to invert to data (§14) |
 
 ## §6 Fidelity
 
@@ -326,6 +338,7 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 | plan | plan root | `sha256` of the canonical `.tess` bytes (`wetware-hq/tesseract`) |
 | token | token id | the chain root and length it was minted with (`wetware-hq/bases`) |
 | page | locus root | the fold over a page's claims (`wetware-hq/helix`) |
+| tensor map | tensor root | `sha256` of the canonical `.tmap` bytes of any object above (§14) |
 
 - **One primitive.** A `dna1` sequence (§9), a `pool1` oligo (§10) and a target or part of a build plan are sequences under extra constraints, not other formats. A layer may narrow what is valid; it may not widen the alphabet, change the record form, or accept `N`, a gap or lower case.
 - **One root rule.** Nothing in the stack hashes a sequence another way. A salt is 32 bytes and is kept with the sequence, never on chain (§9). The sequence root and the chain root of one sequence differ, and only a holder of the salt can show they name the same sequence; so an off-chain object that names a sequence (a plan target, a loop header) carries the sequence root and reaches a chromosome by token id, never by comparing it with the chain root.
@@ -333,6 +346,7 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 - **Bases stay in sequence files.** Only a `.dna` record and a pool file hold bases. A token holds a root and a length, a page holds claims, and a glyph, a diff and a loop hold counts and hashes. Nothing above the sequence layer stores a base, so an agent can hold, print and cite a chromosome it cannot read.
 - **Two-way or a view.** `web ↔ dna1` and `sequence ↔ pool1` reproduce their input exactly. `media → web` is a measured approximation (§6), and a glyph or a loop is regenerated from the sequence, never read back into one (§1).
 - **Refuse, never guess.** Every conversion returns what the data determines or a §5 code. No layer repairs another layer's object.
+- **One tensor map.** Every object in the table has exactly one §14 tensor map, defined by the repository that owns it. It is the only form in which a layer hands its object to a network, and the map's kind travels with its bytes.
 - **Pin a neighbour.** A repository in the stack cites and pins its neighbours by commit; it never vendors their files (`docs/pin-sources.md`). web holds the lowest layer that stores a sequence, so it needs no neighbour at run time.
 
 | Id | Predicate |
@@ -340,9 +354,57 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 | S1 | every sequence anywhere in this repository matches `dna.md` §1: non-empty, one record, `ACGT` only |
 | S2 | every root of a sequence in `web.json` equals `sha256(ascii(seq))`; no other sequence hash is pinned |
 | S3 | no pinned value is cited under two names, and no check accepts one root in place of another |
-| S4 | no file outside `*.fa` and a pool file holds a base of a pinned sequence |
+| S4 | no file outside `*.fa`, a pool file and a `sequence` or `pool` tensor map holds a base of a pinned sequence |
 | S5 | `decipher(encipher(b)) == b` and `unpool(pool(seq)) == seq`; a glyph or a loop is regenerated, not stored as data |
 | S6 | every refused conversion returns a §5 code and no output |
+| S7 | every object kind in the stack has exactly one §14 tensor map, and every map pinned here is the map of its object |
+
+## §14 Tensor maps `tmap1`
+
+A tensor map is the stack's middle layer: every object a layer stores has exactly one form as a set of named tensors, so one reader (a deep net, a TensorFlow graph, a checker) reads every layer the same way. The primitive stays the sequence (§13); a tensor map is how any layer's object, the sequence included, is handed to a network. `tensor.md` names the file form; `ref/tensor.py` is the reference.
+
+```text { type: notebook.cell }
+tmap    := "tmap1" u8(len(kind)) kind u16(n) record*n        # all integers little-endian; n is 1-1024
+kind    := [a-z][a-z0-9-]{0,31}                              # the object kind, table below
+record  := u8(len(name)) name u8(dtype) u8(rank) u32(dim)*rank content
+name    := [a-z][a-z0-9_]{0,63}                              # strictly ascending, bytewise, across records
+dtype   := TensorFlow DataType: 1 float32 | 2 float64 | 3 int32 | 4 uint8 | 5 int16 | 6 int8
+         | 9 int64 | 10 bool | 17 uint16 | 19 float16 | 22 uint32 | 23 uint64
+content := prod(dims) values, row-major, little-endian       # = TensorProto.tensor_content
+root    := sha256(tmap), cited tmap1:<root>
+```
+
+- **TensorFlow is the type system.** A record is a `TensorProto` written flat: `dtype`, `tensor_shape` and `tensor_content`. `ref/tensor.py` `to_tf` builds each record's proto and parses it with `tf.io.parse_tensor`; `from_tf` writes `tf.Tensor`s back to the same bytes. Strings, complex numbers, resources and variants are not tensor-map dtypes: anything a map needs is a number, a bool or a root.
+- **One byte form.** A rank-0 record is a scalar. A float is finite and not negative zero; a bool is 0 or 1; nothing follows the last record. A parser accepts `b` only if `pack(unpack(b)) == b`. A file is at most 2^30 bytes.
+- **Roots.** A 32-byte root in a map is a `uint8 [32]` tensor. The tensor root names the map, not the object: `tmap1:<root>` is never accepted where a web root, a sequence root or any other §13 name is required, nor one kind's map where another kind is required (`kind_mismatch`).
+- **Exact or a view.** An exact map inverts to its object byte for byte. A view map, like the view it maps (§13, S5), is regenerated from data and never read back.
+
+| Kind | Tensors (`name dtype [shape]`) | Map | Owner |
+|---|---|---|---|
+| `media` | `media uint8 grid+(d,)` | exact (the §0 array) | web |
+| `web` | `activation uint8 []`, `omega0 uint16 []`, `grid uint16 [r]`, `w1 float16 [r,H]`, `b1 float16 [H]`, `w2 float16 [H,H]`, `b2 float16 [H]`, `w3 float16 [H,d]`, `b3 float16 [d]` | exact; the six weight contents are the web's own §2 weight bytes | web |
+| `sequence` | `bases uint8 [nt]`, values `0-3` index `ACGT` | exact; one-hot is the view `tf.one_hot(bases, 4)` | web |
+| `pool` | `file uint8 []`, `oligos uint8 [m,117]` in pool order | exact; inverts to the `ref/dna.py pool` file | web |
+| `glyph` | `counts int64 [2^k,2^k]` (§11 grid, row 0 first), `k uint8 []` | view; `counts_root(counts)` is the §11 counts root | web |
+| `loop` | `chain uint8 [b+1,32]` (h_0 … head over b blocks), `kind uint8 [f]` (0 think, 1 hypothesis, 2 act, 3 observe), `verdict uint8 [f]` (0 none, 1 supports, 2 refutes) | view; `chain[-1]` is the §12 head | web |
+| `plan` | the `.tess` tree as tensors | defined by `wetware-hq/tesseract` | tesseract |
+| `token` | a chromosome token's chain state | defined by `wetware-hq/bases` | bases |
+| `page` | a `dna:` or other locus as claim tensors | defined by `wetware-hq/helix` | helix |
+| `order` | a print sale's escrow state | defined by `wetware-hq/med3` | med3 |
+| `ledger` | a research ledger | defined by `wetware-hq/popper` | popper |
+| `frame` | a writing frame and its choices | defined by `wetware-hq/tulip` | tulip |
+| `board` | a forum's message multigraph | defined by `wetware-hq/agora` | agora |
+
+A repository that owns a kind defines its tensors in its own contract, under these bytes and rules, and pins this section by commit. It never adds a dtype, a second map for one kind, or a tensor that holds bases unless its object is a sequence or a pool.
+
+| Id | Predicate |
+|---|---|
+| T1 | every map pinned in `web.json` `tensors` is the map of its object and hashes to its pinned root |
+| T2 | `pack(unpack(b)) == b` for every accepted `b`; every exact map inverts to its object |
+| T3 | every dtype number is TensorFlow's `DataType`, and TensorFlow parses every record to a tensor of the same dtype, shape and values |
+| T4 | no tensor root is pinned or accepted under another name, and a reader of one kind refuses every other kind |
+| T5 | every refused map returns a §5 code and no output |
+| T6 | only `sequence` and `pool` maps hold bases |
 
 ## Citations
 
@@ -350,6 +412,7 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 - Sine networks for signals: SIREN, arXiv:2006.09661.
 - Media as network weights: COIN, arXiv:2103.03123.
 - Networks reading weights: functa, arXiv:2201.12204; DWSNets, arXiv:2301.12780.
+- Tensors and their wire form: TensorFlow `DataType` and `TensorProto` (`tensorflow/core/framework/types.proto`, `tensor.proto`; `docs/pin-sources.md` §Tensors).
 - DNA storage, rotating code and CGR: Goldman et al. 2013; Jeffrey 1990; iCGR, arXiv:1712.04546; JPEG-DNA, arXiv:2103.09616 (`docs/pin-sources.md` §DNA).
 
 ## Falsification
@@ -360,6 +423,7 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 - `python ref/dna.py decipher samples/astronaut-64.fa out.web` writes bytes other than `samples/astronaut-64.web`.
 - A sequence in the stack is hashed two different ways, or a token, a page, a glyph or a loop is found holding bases (§13).
 - `python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt` refuses, or prints a head other than `web.json`.
+- `python ref/tensor.py map web samples/astronaut-64.web out.tmap` writes bytes other than `samples/astronaut-64.web.tmap`, or `tf.io.parse_tensor` reads one of its records to another dtype, shape or value (§14).
 
 ## Licence
 

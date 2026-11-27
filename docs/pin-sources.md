@@ -47,6 +47,14 @@ The theorems guarantee that a good enough web exists for enough units. They do n
 | Treating each datum as a network and training deep nets on the weights; shared initialisation | Dupont et al. (2022) From data to functa, arXiv:2201.12204 |
 | Deep nets that respect the permutation symmetry of hidden units | Navon et al. (2023) DWSNets, arXiv:2301.12780 |
 
+## Tensors
+
+| Use | Source |
+|---|---|
+| `DataType` numbers for the §14 dtype byte | TensorFlow, `tensorflow/core/framework/types.proto` (https://github.com/tensorflow/tensorflow), Apache-2.0; checked against `tensorflow-cpu` 2.21.0 by `tests/test_tensor.py` |
+| `TensorProto` `dtype`, `tensor_shape`, `tensor_content`: the record a `.tmap` writes flat | TensorFlow, `tensorflow/core/framework/tensor.proto`, Apache-2.0 |
+| Tensors as the common input of deep nets | Abadi, M. et al. (2016) TensorFlow: a system for large-scale machine learning. *OSDI '16*, 265–283. arXiv:1605.08695 |
+
 ## DNA
 
 | Use | Source |
