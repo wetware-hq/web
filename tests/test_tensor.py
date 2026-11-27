@@ -124,6 +124,9 @@ class Format(unittest.TestCase):
             with self.assertRaises(web.Refusal) as ctx:
                 tensor.to_pool(tensor.pack("pool", {"file": np.uint8(file), "oligos": rows}))
             self.assertEqual(ctx.exception.code, code)
+        with self.assertRaises(web.Refusal) as ctx:  # a float file id would write file=2.0
+            tensor.to_pool(tensor.pack("pool", {"file": np.float32(2), "oligos": t["oligos"]}))
+        self.assertEqual(ctx.exception.code, "bad_map")
 
     def test_sequence_refusals(self):
         for bad in ("", "ACGN", "acgt"):

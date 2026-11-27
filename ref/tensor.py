@@ -182,7 +182,7 @@ def of_pool(oligos):
 def to_pool(blob):
     """The pool file `dna.py pool` writes, so the pool map is exact against its pinned sha256."""
     t = need(blob, "pool", {"file": 0, "oligos": 2})
-    if t["oligos"].dtype != np.uint8 or t["oligos"].shape[1] != dna.OLIGO_NT:
+    if t["file"].dtype != np.uint8 or t["oligos"].dtype != np.uint8 or t["oligos"].shape[1] != dna.OLIGO_NT:
         raise bad("pool tensors")
     oligos = [letters(row) for row in t["oligos"]]
     if file_of(oligos) != t["file"]:
