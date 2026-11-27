@@ -99,6 +99,11 @@ class Adapters(unittest.TestCase):
         self.assertEqual(again.save_adapter(), tr.save_adapter())
         refused(self, "kind_mismatch", tune.Trainer.from_state, tr.save_adapter())
 
+    def test_state_refuses_bad_moments(self):
+        t = tensor.unpack(tune.fit(tune.Trainer.fresh(SMALL.shape[:-1], 3, 16, 30, 1), SMALL, 2).save_state())[1]
+        for k, v in (("m_w2", t["m_w2"][:, :3]), ("v_b1", t["v_b1"].astype(np.float64)), ("w3", t["w3"].T.copy())):
+            refused(self, "bad_map", tune.Trainer.from_state, tensor.pack("state", t | {k: v}))
+
 
 class Heuristics(unittest.TestCase):
     def test_counts(self):

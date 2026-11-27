@@ -36,6 +36,19 @@ class AdamParams:
     grad_clip_norm: float = 0.0
 
 
+def shapes(d_in, d_out, hidden, rank=0):
+    """The shape of each trainable tensor: the six weights, or each matrix's down and up factors."""
+    full = dict(zip(WEIGHTS, ((d_in, hidden), (hidden,), (hidden, hidden), (hidden,), (hidden, d_out), (d_out,))))
+    if not rank:
+        return full
+    out = {}
+    for n in MATRICES:
+        a, b = full[n]
+        r = min(rank, a, b)
+        out |= {n + "_down": (a, r), n + "_up": (r, b)}
+    return out
+
+
 def init_params(d_in, d_out, hidden, seed):
     """The reference encoder's initial weights (SIREN first layer), binary32."""
     rng = np.random.default_rng(seed)
@@ -116,6 +129,9 @@ class Trainer:
                     raise Refusal("root_mismatch", "state base weights do not hash to its base root")
             train = {n: t[n] for n in names}
             hidden = (t["w1"] if base is not None else train["w1"]).shape[1]
+            want = shapes(len(grid), d_out, hidden, int(t["rank"]) if base is not None else 0)
+            if set(train) != set(want) or any(t[k + n].dtype != np.float32 or t[k + n].shape != want[n] for n in want for k in ("", "m_", "v_")):
+                raise ValueError("trainable tensors or moments do not match the web's shapes")
             self = cls(grid, d_out, hidden, omega0, train, base=base, rank=int(t["rank"]) if base is not None else 0)
             if with_optimizer:
                 self.m = {n: t["m_" + n].astype(np.float32) for n in names}
