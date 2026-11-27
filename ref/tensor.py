@@ -65,14 +65,14 @@ def check(name, a):
 
 def pack(kind, tensors):
     """Serialize {name: array} under `kind` to canonical tmap1 bytes, names in ascending order."""
-    k = kind.encode("ascii")
+    k = kind.encode("ascii", "replace")
     if not KIND.fullmatch(k):
         raise Refusal("bad_kind", kind)
     if not 1 <= len(tensors) <= MAX_TENSORS:
         raise Refusal("bad_count", str(len(tensors)))
     out = [MAGIC, bytes([len(k)]), k, struct.pack("<H", len(tensors))]
-    for name in sorted(tensors, key=lambda s: s.encode("ascii")):
-        n = name.encode("ascii")
+    for name in sorted(tensors, key=lambda s: s.encode("ascii", "replace")):
+        n = name.encode("ascii", "replace")
         if not NAME.fullmatch(n):
             raise Refusal("bad_name", name)
         a = np.asarray(tensors[name])
@@ -221,12 +221,30 @@ def to_sequence(blob):
     return bases(t["bases"])
 
 
-def of_pool(oligos, file_id):
-    """A pool1 pool as [oligos, 117] base indices in pool order, and its file id."""
-    if not 0 <= file_id <= 8:
-        raise Refusal("bad_file", str(file_id))
+def pool_file_id(oligos):
+    """The file id the oligos themselves carry (§10), so a map never relabels a pool."""
+    ids = set()
+    for o in oligos:
+        read = dna.read_oligo(o)
+        if read is None:
+            raise Refusal("bad_pool", "an oligo fails its own index and parity")
+        ids.add(read[0])
+    if len(ids) != 1:
+        raise Refusal("bad_file", f"the pool carries file ids {sorted(ids)}")
+    return ids.pop()
+
+
+def of_pool(oligos, file_id=None):
+    """A pool1 pool as [oligos, 117] base indices in pool order, and the file id its oligos carry."""
     if not oligos or any(len(o) != dna.OLIGO_NT or o.strip(dna.BASES) for o in oligos):
         raise Refusal("bad_pool", "a pool is 117-nt ACGT oligos")
+    carried = pool_file_id(oligos)
+    if file_id is None:
+        file_id = carried
+    if file_id != carried:
+        raise Refusal("bad_file", f"the pool carries file {carried}, not {file_id}")
+    if not 0 <= file_id <= 8:
+        raise Refusal("bad_file", str(file_id))
     seq = unpack(of_sequence("".join(oligos)))[1]["bases"]
     return pack("pool", {"file": np.array(file_id, np.uint8), "oligos": seq.reshape(len(oligos), dna.OLIGO_NT)})
 
@@ -235,7 +253,15 @@ def to_pool(blob):
     t = unpack(blob, "pool")[1]
     if set(t) != {"file", "oligos"} or t["file"].shape != () or t["oligos"].ndim != 2 or t["oligos"].shape[1] != dna.OLIGO_NT:
         raise Refusal("bad_map", "pool tensors")
-    return [bases(row) for row in t["oligos"]], int(t["file"])
+    if not t["oligos"].shape[0]:
+        raise Refusal("bad_pool", "a pool has at least one oligo")
+    file_id = int(t["file"])
+    if not 0 <= file_id <= 8:
+        raise Refusal("bad_file", str(file_id))
+    oligos = [bases(row) for row in t["oligos"]]
+    if pool_file_id(oligos) != file_id:
+        raise Refusal("bad_file", f"the oligos carry file {pool_file_id(oligos)}, not {file_id}")
+    return oligos, file_id
 
 
 def pool_bytes(oligos, file_id):
@@ -308,7 +334,7 @@ def from_tf(kind, tensors):
 # --- files -----------------------------------------------------------------------------------
 
 
-def of_file(kind, path, k=3, file_id=0):
+def of_file(kind, path, k=3, file_id=None):
     p = Path(path)
     if kind == "media":
         return of_media(web.read_png(p))
@@ -358,7 +384,7 @@ def main(argv=None):
     m.add_argument("src")
     m.add_argument("out")
     m.add_argument("--k", type=int, default=3, help="glyph k, 1-6")
-    m.add_argument("--file", type=int, default=0, help="pool file id, 0-8")
+    m.add_argument("--file", type=int, default=None, help="the pool file id to require; read from the oligos by default")
     m.add_argument("--root", help="refuse unless the map hashes to this tensor root")
     s = sub.add_parser("show", help="print a tensor map's root, kind, names, dtypes and shapes")
     s.add_argument("tmap")

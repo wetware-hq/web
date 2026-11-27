@@ -23,7 +23,7 @@ def path(p):
 
 
 def mapped(m):
-    return tensor.of_file(m["kind"], path(m["of"]), m.get("k", 3), m.get("file", 0))
+    return tensor.of_file(m["kind"], path(m["of"]), m.get("k", 3), m.get("file"))
 
 
 try:
@@ -120,6 +120,28 @@ class Format(unittest.TestCase):
         for t, code in (({"x": np.array(-0.0)}, "bad_value"), ({"x": np.array(["s"])}, "bad_dtype"), ({"X": np.zeros(1)}, "bad_name"), ({}, "bad_count")):
             with self.assertRaises(web.Refusal) as ctx:
                 tensor.pack("probe", t)
+            self.assertEqual(ctx.exception.code, code)
+
+    def test_pool_refusals(self):
+        oligos = dna.pool(dna.read_fasta(path([m for m in MAPS if m["kind"] == "sequence"][0]["of"])), 2)
+        self.assertEqual(tensor.unpack(tensor.of_pool(oligos))[1]["file"], 2)
+        with self.assertRaises(web.Refusal) as ctx:  # a map never relabels a pool
+            tensor.of_pool(oligos, 0)
+        self.assertEqual(ctx.exception.code, "bad_file")
+        blob = tensor.of_pool(oligos)
+        t = tensor.unpack(blob)[1]
+        for bad, code in ((np.array(0, np.uint8), "bad_file"), (np.array(9, np.uint8), "bad_file")):
+            with self.assertRaises(web.Refusal) as ctx:
+                tensor.to_pool(tensor.pack("pool", {"file": bad, "oligos": t["oligos"]}))
+            self.assertEqual(ctx.exception.code, code)
+        with self.assertRaises(web.Refusal) as ctx:
+            tensor.to_pool(tensor.pack("pool", {"file": t["file"], "oligos": t["oligos"][:0]}))
+        self.assertEqual(ctx.exception.code, "bad_pool")
+
+    def test_non_ascii_names_refuse_with_a_code(self):
+        for kind, name, code in (("w\u00e9b", "x", "bad_kind"), ("probe", "\u00e9", "bad_name")):
+            with self.assertRaises(web.Refusal) as ctx:
+                tensor.pack(kind, {name: np.zeros(1)})
             self.assertEqual(ctx.exception.code, code)
 
     def test_sequence_refusals(self):
