@@ -43,6 +43,14 @@ class Steps(unittest.TestCase):
         self.assertEqual(cold.step, 0)
         self.assertEqual(cold.save_weights(), half.save_weights())
 
+    def test_u2_resume_keeps_the_plan(self):
+        p = tune.AdamParams(3e-3, beta2=0.95, eps=1e-12, weight_decay=1e-4, grad_clip_norm=1.0)
+        whole = tune.fit(tune.Trainer.fresh(SMALL.shape[:-1], 3, 16, 30, 1), SMALL, 60, p, "linear", 64, 5)
+        half = tune.fit(tune.Trainer.fresh(SMALL.shape[:-1], 3, 16, 30, 1), SMALL, 30, p, "linear", 64, 5, total=60)
+        resumed = tune.fit(tune.Trainer.from_state(half.save_state()), SMALL)
+        self.assertEqual((resumed.step, resumed.plan), (60, whole.plan))
+        self.assertEqual(resumed.save_weights(), whole.save_weights())
+
     def test_accumulated_gradients_are_the_full_batch(self):
         x, t = tune.targets(SMALL)
         a = tune.Trainer.fresh(SMALL.shape[:-1], 3, 16, 30, 2)
@@ -118,6 +126,16 @@ class Heuristics(unittest.TestCase):
 
 
 class Cli(unittest.TestCase):
+    def test_resume_takes_the_saved_hyperparameters(self):
+        png = os.path.join(ROOT, PINS["webs"][0]["media"]["path"])
+        with tempfile.TemporaryDirectory() as d:
+            o = lambda n: os.path.join(d, n)  # noqa: E731
+            flags = ["--steps", "3", "--lr", "3e-3", "--beta2", "0.95", "--eps", "1e-12", "--schedule", "linear", "--hidden", "8"]
+            self.assertEqual(tune.main(["fit", png, o("whole.web")] + flags), 0)
+            self.assertEqual(tune.main(["fit", png, o("half.web"), "--state", o("half.tmap"), "--total", "3"] + flags[2:] + ["--steps", "2"]), 0)
+            self.assertEqual(tune.main(["fit", png, o("rest.web"), "--from-state", o("half.tmap")]), 0)
+            self.assertEqual(Path(o("rest.web")).read_bytes(), Path(o("whole.web")).read_bytes())
+
     def test_merge_and_refuse_overwrite(self):
         with tempfile.TemporaryDirectory() as d:
             out = os.path.join(d, "m.web")

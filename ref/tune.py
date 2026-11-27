@@ -9,7 +9,7 @@ resumes a fit, an `adapter` is a low-rank patch over a committed web that merges
 import argparse
 import math
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -21,6 +21,8 @@ import web  # noqa: E402
 Refusal = web.Refusal
 WEIGHTS = tensor.WEIGHTS
 MATRICES = ("w1", "w2", "w3")
+SCHEDULES = ("constant", "linear")
+PLAN = ("learning_rate", "beta1", "beta2", "eps", "weight_decay", "grad_clip_norm")  # float64 [] in a state
 LORA_LR_MULTIPLIER = 10.0  # Tinker's LoRA-over-full LR factor; §15 records what webs measure
 
 
@@ -85,6 +87,7 @@ class Trainer:
         self.v = {n: np.zeros_like(a) for n, a in self.train.items()}
         self.grads = {}
         self.step = 0
+        self.plan = None  # the last fit's params, schedule, horizon, batch and seed, saved in a state
 
     # --- create ---------------------------------------------------------------------------
 
@@ -133,6 +136,8 @@ class Trainer:
             if set(train) != set(want) or any(t[k + n].dtype != np.float32 or t[k + n].shape != want[n] for n in want for k in ("", "m_", "v_")):
                 raise ValueError("trainable tensors or moments do not match the web's shapes")
             self = cls(grid, d_out, hidden, omega0, train, base=base, rank=int(t["rank"]) if base is not None else 0)
+            if "total" in t:
+                self.plan = {"params": AdamParams(*(float(t[n]) for n in PLAN)), "schedule": SCHEDULES[int(t["schedule"])], "total": int(t["total"]), "batch": int(t["batch"]), "seed": int(t["seed"])}
             if with_optimizer:
                 self.m = {n: t["m_" + n].astype(np.float32) for n in names}
                 self.v = {n: t["v_" + n].astype(np.float32) for n in names}
@@ -214,6 +219,9 @@ class Trainer:
         t = {"grid": np.array(self.grid, np.uint16), "omega0": np.uint16(self.omega0), "d_out": np.uint8(self.d_out), "step": np.int64(self.step)}
         t |= {k: clean(a) for k, a in self.train.items()}
         t |= {"m_" + k: clean(a) for k, a in self.m.items()} | {"v_" + k: clean(a) for k, a in self.v.items()}
+        if self.plan is not None:
+            t |= {n: np.float64(getattr(self.plan["params"], n)) + 0.0 for n in PLAN}
+            t |= {"schedule": np.uint8(SCHEDULES.index(self.plan["schedule"])), "total": np.int64(self.plan["total"]), "batch": np.int64(self.plan["batch"]), "seed": np.int64(self.plan["seed"])}
         if self.base is not None:
             t |= {n: f16(p) for n, p in zip(WEIGHTS, web.unpack(self.base)["params"])}
             t |= {"base": np.frombuffer(bytes.fromhex(web.root(self.base)), np.uint8), "rank": np.uint16(self.rank)}
@@ -280,19 +288,38 @@ def param_count(hidden, d_in, d_out, rank=0):
     return sum(min(rank, a, b) * (a + b) for a, b in ((d_in, hidden), (hidden, hidden), (hidden, d_out)))
 
 
-def fit(trainer, media, steps, params=AdamParams(), schedule="constant", batch=0, seed=0, every=0, log=None):
-    """Run `steps` of forward_backward + optim_step on `media`, full batch unless `batch` > 0."""
+def fit(trainer, media, steps=None, params=None, schedule=None, batch=None, seed=None, total=None, every=0, log=None):
+    """Run `steps` of forward_backward + optim_step on `media`, full batch unless `batch` > 0.
+
+    An argument left as None comes from the plan of the fit a state resumes, else the defaults, so a
+    resumed fit runs to the same horizon with the same rate, schedule and minibatches as one
+    uninterrupted fit. `total` is the step the linear schedule reaches zero at, by default the end of
+    this fit; give it to a fit that will be resumed. The schedule and each minibatch are keyed by the
+    absolute step.
+    """
+    plan = trainer.plan if trainer.plan is not None and trainer.step else {}
+    params = params if params is not None else plan.get("params", AdamParams())
+    schedule = schedule if schedule is not None else plan.get("schedule", "constant")
+    batch = batch if batch is not None else plan.get("batch", 0)
+    seed = seed if seed is not None else plan.get("seed", 0)
+    if schedule not in SCHEDULES:
+        raise ValueError(f"schedule must be one of {SCHEDULES}")
+    total = total if total is not None else plan.get("total")
+    if steps is None:
+        steps = total - trainer.step if total is not None else 10000
+    total = max(total or 0, trainer.step + steps)
+    trainer.plan = {"params": params, "schedule": schedule, "total": total, "batch": batch, "seed": seed}
     x, t = targets(media)
-    rng = np.random.default_rng(seed)
-    for s in range(1, steps + 1):
+    for _ in range(steps):
+        s = trainer.step + 1
         if batch:
-            i = rng.choice(len(x), batch, replace=False)
+            i = np.random.default_rng([seed, s]).choice(len(x), batch, replace=False)
             loss = trainer.forward_backward(x[i], t[i])
         else:
             loss = trainer.forward_backward(x, t)
-        p = params if schedule == "constant" else AdamParams(**(asdict(params) | {"learning_rate": linear_decay(params.learning_rate, s, steps)}))
+        p = params if schedule == "constant" else replace(params, learning_rate=linear_decay(params.learning_rate, s, total))
         trainer.optim_step(p)
-        if log and every and s % every == 0:
+        if log and every and trainer.step % every == 0:
             log(trainer.step, loss)
     return trainer
 
@@ -319,17 +346,18 @@ def main(argv=None):
     f.add_argument("--no-optimizer", action="store_true", help="with --from-state, restart Adam's moments")
     f.add_argument("--rank", type=int, default=0, help="train a LoRA adapter of this rank over --from-web")
     f.add_argument("--state", help="also write the state map here, to resume later")
-    f.add_argument("--steps", type=int, default=10000)
-    f.add_argument("--lr", type=float, default=1e-3)
-    f.add_argument("--beta2", type=float, default=0.999)
-    f.add_argument("--eps", type=float, default=1e-8)
-    f.add_argument("--weight-decay", type=float, default=0.0)
-    f.add_argument("--clip", type=float, default=0.0, help="global gradient norm clip; 0 disables")
-    f.add_argument("--schedule", choices=("constant", "linear"), default="constant")
-    f.add_argument("--batch", type=int, default=0, help="minibatch rows per step; 0 is full batch")
+    f.add_argument("--steps", type=int, help="default: the rest of a resumed fit, else 10000")
+    f.add_argument("--lr", type=float)
+    f.add_argument("--beta2", type=float)
+    f.add_argument("--eps", type=float)
+    f.add_argument("--weight-decay", type=float)
+    f.add_argument("--clip", type=float, help="global gradient norm clip; 0 disables")
+    f.add_argument("--total", type=int, help="the step a linear schedule reaches zero at; default: the end of this fit")
+    f.add_argument("--schedule", choices=SCHEDULES)
+    f.add_argument("--batch", type=int, help="minibatch rows per step; 0 is full batch")
     f.add_argument("--hidden", type=int, default=64)
     f.add_argument("--omega0", type=int, default=30)
-    f.add_argument("--seed", type=int, default=0)
+    f.add_argument("--seed", type=int)
     m = sub.add_parser("merge", help="apply an adapter to its base web, writing a new web")
     m.add_argument("web")
     m.add_argument("adapter")
@@ -355,15 +383,17 @@ def main(argv=None):
         if a.from_state:
             tr = Trainer.from_state(Path(a.from_state).read_bytes(), with_optimizer=not a.no_optimizer)
         elif a.from_web and a.rank:
-            tr = Trainer.lora(Path(a.from_web).read_bytes(), a.rank, a.seed)
+            tr = Trainer.lora(Path(a.from_web).read_bytes(), a.rank, a.seed or 0)
         elif a.from_web:
             tr = Trainer.from_web(Path(a.from_web).read_bytes())
         else:
-            tr = Trainer.fresh(media.shape[:-1], media.shape[-1], a.hidden, a.omega0, a.seed)
+            tr = Trainer.fresh(media.shape[:-1], media.shape[-1], a.hidden, a.omega0, a.seed or 0)
         if tr.grid != media.shape[:-1] or tr.d_out != media.shape[-1]:
             raise Refusal("shape_mismatch", f"{tr.grid + (tr.d_out,)} != {media.shape}")
-        p = AdamParams(a.lr, 0.9, a.beta2, a.eps, a.weight_decay, a.clip)
-        fit(tr, media, a.steps, p, a.schedule, a.batch, a.seed)
+        given = {"learning_rate": a.lr, "beta2": a.beta2, "eps": a.eps, "weight_decay": a.weight_decay, "grad_clip_norm": a.clip}
+        base = tr.plan["params"] if tr.plan is not None else AdamParams()
+        p = replace(base, **{k: v for k, v in given.items() if v is not None})
+        fit(tr, media, a.steps, p, a.schedule, a.batch, a.seed, a.total)
         out = tr.save_adapter() if tr.base is not None else tr.save_weights()
         write(a.out, out)
         if a.state:
