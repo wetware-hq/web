@@ -32,6 +32,7 @@ wetware-hq
   tesseract   .tess  build plan        parts  ──┐          (compiles a sequence into synthesizable parts)
   web         .web   shallow network     │      │
               deep1  deep net, composed  │      │          deep1 §16
+              kline1 K-line, recalled    │      │          kline1 §17
               .dna   sequence  ◀─────────┘      │          (the primitive; this repository defines it)
                      oligos  arr<oligo>         │          pool1 §10
                      loop                       │          loop1 §12
@@ -46,6 +47,7 @@ wetware-hq
 | **sequence** | `web` | one `ACGT` record, the primitive | **sequence root** `sha256(ascii(seq))` (§9) | `sequence`, exact |
 | oligo pool | `web` | `arr<oligo>`, 117-nt indexed oligos | `sha256` of the pool file, plus the sequence root it rebuilds (§10) | `pool`, exact |
 | deep net | `web` | `deep1` record, webs composed stage by stage | **deep head**, the chain over stage web roots and interface roots (§16) | `deep`, view |
+| K-line | `web` | `kline1` record, a composition function and the uses it raised | **K-line head**, the chain over its stage web roots (§17) | `kline`, view |
 | loop | `web` | `loop1` pseudovisual chain of thought | **head**, the frame hash chain (§12) | `loop`, view |
 | build plan | `tesseract` | `.tess`, a tree of parts for one target | **plan root** `sha256` of the canonical plan bytes; its target is a sequence root | `plan` (tesseract) |
 | chromosome token | `bases` | one ERC-721, 1 base … n bases | **chain root** `sha256(salt \|\| ascii(seq))` and the length in bases; print `receipt` is a loop head | `token` (bases) |

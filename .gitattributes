@@ -3,3 +3,4 @@
 /ooc/web.og text eol=lf
 /samples/*.loop.txt text eol=lf
 /samples/*.deep text eol=lf
+/samples/*.kline text eol=lf

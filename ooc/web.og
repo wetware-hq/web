@@ -1,11 +1,11 @@
 ::meta
 title: web route and file index
-version: 7
+version: 8
 updated: 2026-11-28
 domain: web|shallow-nn|universal-approximator|deep-by-composition|media|on-chain|dna-primitive|stack|tensor-map
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:5adf19f39ad7f126e98b62ae7998921e10161b536feef735541833d405309f48
+checksum: sha256:97157f2d51fd37781e38911a8412cb77d2ea58808d0f5f91821391edbcea6450
 ::end
 
 ::schema
@@ -31,6 +31,7 @@ pool1 | system | all | 1.00 | oligo-pool, 117nt, 4x-overlap, index-parity, revco
 deep1 | system | all | 1.00 | composition, induction, shallow-to-deep, 256-level-interface, stage-chain, deep-head, zkml-link, C1-C5
 loop1 | system | all | 1.00 | pseudovisual-cot, think, hypothesis, act, observe, diff, hash-chain, print-receipt, D14-D16
 tmap1 | system | all | 1.00 | tensor-map, .tmap, tensorflow-DataType, TensorProto, tensor-root, exact-or-view, T1-T4
+kline1 | system | all | 1.00 | k-line, composition-function, induction, grow, utility-psnr, recall-2-targets, kline-head, L1-L5
 klines | memory | all | 1.00 | k-line, minsky-1980, replicated, refuse-never-guess, computed-verdict, exact-or-view, one-root-rule, replay-normative, machine-is-data, pin-never-vendor, finalized-block, specbase-shape, K1-K9
 stop | assertion | all | 1.00 | rendered, checked, sufficient
 ::end
@@ -261,7 +262,7 @@ Load dna.md, then docs/follow-agent-contract.md §13. dna1, pool1 oligos and tes
 
 ::node [id=stack type=map confidence=1.00 scope=all updated=2026-11-26]
 ::dense
-wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;deep1,deep-head;.dna,sequence-root;pool1;loop1;.tmap,tensor-root)|bases(token,chain-root+length)|helix(dna:,locus-root)
+wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;deep1,deep-head;kline1,kline-head;.dna,sequence-root;pool1;loop1;.tmap,tensor-root)|bases(token,chain-root+length)|helix(dna:,locus-root)
 ::end
 ::full
 Load docs/organize-stack.md. Only roots cross upward; only sequence files hold bases.
@@ -269,6 +270,24 @@ Load docs/organize-stack.md. Only roots cross upward; only sequence files hold b
 ::edges
 ->[:requires] docs/organize-stack.md
 ->[:requires] seq
+::end
+::end
+
+::node [id=kline1 type=system confidence=1.00 scope=all updated=2026-11-28]
+::dense
+ref=ref/compose.py|K(D)=D++stages|k0=sha256(kline1)|k=sha256(k||web-root)|use=(deep-head,sha256(target),utility-per-prefix)|recalled=supports-on-2-targets|grow=keep-step-iff-utility-rises|sample=luma.kline(recalled)+astronaut-64.luma-curve.kline(not)|L1-L5
+::end
+::full
+Load docs/follow-agent-contract.md §17. samples/luma.kline is recalled (32.47, 34.93 dB); samples/astronaut-64.luma-curve.kline is not (coffee 34.93 -> 34.42 dB). Pins in web.json klines. A view, not a store.
+::end
+::edges
+->[:requires] deep1
+->[:requires] klines
+->[:refuses] bad_kline
+->[:refuses] bad_stage
+->[:refuses] bad_head
+->[:refuses] root_mismatch
+->[:refuses] mismatch
 ::end
 ::end
 
@@ -300,5 +319,6 @@ v4=dna-primitive|stack-map|S1-S6
 v5=tmap1-tensor-maps|tensorflow-DataType|S7|T1-T4
 v6=k-line-register|replicated-moves|K1-K9
 v7=deep1-composition|stage-chain|C1-C5|cgr1-and-qr-excised
+v8=kline1-compositions-as-klines|grow-by-induction|coffee-64-sample|L1-L5
 ::end
 ::end

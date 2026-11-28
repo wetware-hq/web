@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import compose  # noqa: E402
 import deep  # noqa: E402
 import dna  # noqa: E402
 import loop  # noqa: E402
@@ -30,7 +31,7 @@ DTYPES = {1: "<f4", 2: "<f8", 3: "<i4", 4: "|u1", 5: "<i2", 6: "|i1", 9: "<i8", 
 CODES = {np.dtype(v): k for k, v in DTYPES.items()}
 
 EXACT = ("web", "sequence", "pool")
-VIEWS = ("loop", "deep")
+VIEWS = ("loop", "deep", "kline")
 WEIGHTS = ("w1", "b1", "w2", "b2", "w3", "b3")
 LOOP_KINDS = ("think", "hypothesis", "act", "observe")
 VERDICTS = {"supports": 1, "refutes": 2}
@@ -219,6 +220,24 @@ def of_deep(text):
     return pack("deep", {"chain": roots(deep.chain([(w, o) for w, _, o in ls])), "outs": roots([o for _, _, o in ls]), "webs": roots([w for w, _, _ in ls])})
 
 
+def of_kline(text):
+    """A kline1 record as its stage web roots, its hash chain k_0 .. head, and per use its deep head, its target
+    root and whether every stage raised utility (a view, §17)."""
+    compose.check_head(text)
+    stages, _, uses = compose.parse(text)
+
+    def roots(hexes):
+        return np.frombuffer(bytes.fromhex("".join(hexes)), np.uint8).reshape(len(hexes), 32)
+
+    return pack("kline", {
+        "chain": roots(compose.chain([r for r, _ in stages])),
+        "deeps": roots([d for d, _, _ in uses]),
+        "stages": roots([r for r, _ in stages]),
+        "supports": np.array([compose.supports(us) for _, _, us in uses], np.bool_),
+        "targets": roots([t for _, t, _ in uses]),
+    })
+
+
 # --- TensorFlow ------------------------------------------------------------------------------
 
 
@@ -254,6 +273,7 @@ def of_file(kind, path):
         "pool": lambda: of_pool(dna.read_pool(p)),
         "loop": lambda: of_loop(p.read_bytes().decode("ascii")),
         "deep": lambda: of_deep(p.read_bytes().decode("ascii")),
+        "kline": lambda: of_kline(p.read_bytes().decode("ascii")),
     }[kind]()
 
 

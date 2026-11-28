@@ -71,6 +71,9 @@ The theorems guarantee that a good enough web exists for enough units. They do n
 |---|---|
 | A committed model and a proof that it produced an output from an input; fixed-point values and lookup tables for non-linearities (the shape of a §16 link) | Chen, B.-J., Waiwitlikhit, S., Stoica, I. and Kang, D. (2024) ZKML: an optimizing system for ML inference in zero-knowledge proofs. *EuroSys '24*. https://ddkang.github.io/papers/2024/zkml-eurosys.pdf |
 | BT.601 luma weights 0.299, 0.587, 0.114 (the `samples/luma.web` stage) | ITU-R Recommendation BT.601 |
+| A K-line: a handle that reactivates the set of agents that solved a problem of this kind before (the §17 object) | Minsky, M. (1980) K-Lines: a theory of memory. *Cognitive Science* 4(2), 117–133. https://dspace.mit.edu/handle/1721.1/5763 |
+| Growing a deep net one shallow stage at a time, keeping a stage by its measured gain (the §17 induction) | Bengio, Y., Lamblin, P., Popovici, D. and Larochelle, H. (2006) Greedy layer-wise training of deep networks. *NeurIPS 19*. |
+| The second sample source, `coffee.png` (CC0) | scikit-image data, commit `d448e337`; sha256 pinned in `web.json` `sources` |
 
 ## Media
 
