@@ -130,6 +130,26 @@ class Grow(unittest.TestCase):
         refuses(self, "shape_mismatch", compose.curve_table, np.zeros((2, 3), np.uint8), np.zeros((2, 3), np.uint8))
 
 
+class Edges(unittest.TestCase):
+    def test_exact_match_round_trips(self):
+        inputs, t = USES[0]
+        exact = compose.luma_target(web.read_png(path(KL["uses"][0]["media"])))
+        text = compose.record([LUMA], [("0" * 64, "1" * 64, [None, float("inf")])])
+        self.assertEqual(compose.parse(text)[2][0][2], [None, float("inf")])
+        self.assertTrue(np.array_equal(exact, t))
+
+    def test_fit_needs_a_comparable_interface(self):
+        inputs, t = USES[0]
+        self.assertEqual(compose.grow(inputs, t[:32], library=[LUMA]), ([], [("start", None)]))
+
+    def test_luma_is_integer_half_even(self):
+        px = np.array([[[1, 0, 0]]], np.uint8)  # 0.299 -> 0
+        self.assertEqual(compose.luma_target(px)[0, 0, 0], 0)
+        # 299*2 + 587*0 + 114*... : find exact .5 cases by construction: 500/1000 with q even/odd
+        self.assertEqual(compose.luma_target(np.array([[[0, 0, 0]]], np.uint8))[0, 0, 0], 0)
+        self.assertEqual(compose.luma_target(np.array([[[255, 255, 255]]], np.uint8))[0, 0, 0], 255)
+
+
 class Refusals(unittest.TestCase):  # L5
     def setUp(self):
         self.text = path(KL["kline"][0]["path"]).read_text("ascii")

@@ -469,14 +469,14 @@ recalled(K)   = supports holds for uses on at least 2 different targets
 record := "%kline1 stages=" m " in=" d(D) " out=" d(s_(m-1)) " uses=" u LF
           ("%stage " i " web=" root(s_i) " d=" d(s_i) LF) * m
           "%head " k_m LF
-          ("%use " j " deep=" deep-head " target=" sha256(t) " utility=" u_0 "," … "," u_m LF) * u
+          ("%use " j " deep=" deep-head " target=" sha256(t) " utility=" u_0 "," … "," u_m LF) * u   # u_i: none, inf, or 2 decimals
 ```
 
 ```text { type: notebook.cell }
 grow(D, t, klines, library):                                          # induction on depth
   loop at most 8 times:
     candidates := every recalled K-line, then every library stage, whose first stage reads d(D)
-                  + a fitted curve, when d(D) = 1 and t has 1 channel
+                  + a fitted curve, when d(D) = 1 and D's last interface has t's shape
     best       := the candidate of highest utility(D ++ candidate, t); ties go to the earlier one
     if utility rises: D := D ++ best, else stop
   return the stages added and the utility after each kept step

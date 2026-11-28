@@ -99,7 +99,7 @@ def grow(blobs, target, klines=(), library=(), fit=True, max_steps=MAX_STEPS):
             break
         cands = [(f"kline:{head(k)}", list(k)) for k in klines if k and fits(d, k[0])]
         cands += [(f"stage:{web.root(s)}", [s]) for s in library if fits(d, s)]
-        if fit and d == 1 and target.shape[-1] == 1:
+        if fit and d == 1 and last(blobs).shape == target.shape:
             cands.append(("fit", None))
         best = None
         for source, stages in cands:
@@ -135,7 +135,11 @@ def head(stages):
 
 
 def fmt(u):
-    return "none" if u is None else f"{u:.2f}"
+    return "none" if u is None else "inf" if u == float("inf") else f"{u:.2f}"
+
+
+def unfmt(v):
+    return None if v == "none" else float(v)
 
 
 def use(inputs, stages, target):
@@ -198,10 +202,10 @@ def parse(text):
         raise web.Refusal("bad_kline", "head line")
     uses = []
     for j, ln in enumerate(lines[2 + n :]):
-        s = re.fullmatch(rf"%use {j} deep=([0-9a-f]{{64}}) target=([0-9a-f]{{64}}) utility=((?:none|\d+\.\d\d)(?:,(?:none|\d+\.\d\d)){{{n}}})", ln)
+        s = re.fullmatch(rf"%use {j} deep=([0-9a-f]{{64}}) target=([0-9a-f]{{64}}) utility=((?:none|inf|\d+\.\d\d)(?:,(?:none|inf|\d+\.\d\d)){{{n}}})", ln)
         if not s:
             raise web.Refusal("bad_kline", f"use line {j}")
-        uses.append((s[1], s[2], [None if v == "none" else float(v) for v in s[3].split(",")]))
+        uses.append((s[1], s[2], [unfmt(v) for v in s[3].split(",")]))
     if int(m[3]) != stages[-1][1]:
         raise web.Refusal("bad_kline", "out is not the last stage's d")
     return stages, h[1], uses
