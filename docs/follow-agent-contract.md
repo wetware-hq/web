@@ -14,7 +14,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
   "reads": ["DISCLAIMER", "web.json", "ooc/web.og"],
   "writes": [],
   "must": ["one canonical byte form", "decode is the only normative direction", "never rewrite a committed web", "match codes, not prose"],
-  "check": ["W1-W8", "D1-D16", "S1-S7", "T1-T4", "U1-U5"]
+  "check": ["W1-W8", "D1-D4", "D6-D11", "D14-D16", "S1-S7", "T1-T4", "U1-U5", "C1-C5"]
 }
 ```
 
@@ -38,13 +38,14 @@ store = "*.web"                # canonical bytes, §2
 pins = "web.json"              # sample roots, fidelity and chain
 index = "ooc/web.og"           # ObjectGraph traversal index
 ref = "ref/web.py"             # reference decoder (normative) and encoder (one valid fit)
-dna = "ref/dna.py"             # dna1 cipher §9, pool1 oligos §10, cgr1 glyph §11; both directions normative
+dna = "ref/dna.py"             # dna1 cipher §9, pool1 oligos §10; both directions normative
 loop = "ref/loop.py"           # loop1 pseudovisual chain of thought §12; replay is normative
 commit = "systems/commit-web.md"
 stack = "docs/organize-stack.md"  # where each repository sits over the primitive, §13
 tensor = "tensor.md"           # the .tmap tensor map: every layer's object as named tensors, §14
 tensors = "ref/tensor.py"      # tmap1 maps §14; TensorFlow DataType codes; exact maps invert
 tune = "ref/tune.py"            # weight manipulation §15: training steps, state and adapter maps, LR rules
+deep = "ref/deep.py"            # deep1 composition §16: shallow webs into a deep net, interfaces hash-chained
 ```
 
 ## Indications
@@ -71,6 +72,7 @@ tune = "ref/tune.py"            # weight manipulation §15: training steps, stat
 | **sequence** | one non-empty ASCII string over `ACGT`, the stack primitive (`dna.md`, §9, §13) | yes |
 | **sequence root** | `sha256(ascii(seq))` | yes |
 | **chain root** | `sha256(salt \|\| ascii(seq))` with a 32-byte salt: Bases `root`, helix `sequence-root` | yes, with the salt |
+| **deep net** | an ordered list of webs, each stage reading the levels of the one before (§16) | yes |
 | **fidelity** | PSNR in dB of a render against its pinned source media | a measurement, not a property of the bytes |
 
 ## §1 Flow
@@ -154,11 +156,13 @@ Agents match on codes, never on message text.
 | `tie` | the valid pool1 reads covering a base disagree with no majority (§10) |
 | `bad_pool` | the voted pool1 sequence's length trailer or padding is inconsistent (§10) |
 | `bad_loop` | a loop1 file breaks the §12 grammar: header, numbering, frame order, a parameter, or a reads path outside the loop's directory |
-| `bad_head` | a loop1 `%head` is not the hash chain of its blocks (§12) |
-| `mismatch` | a loop1 frame differs from what its parameters and the data regenerate (§12) |
+| `bad_head` | a loop1 or deep1 `%head` is not the hash chain of its blocks (§12) or its stages (§16) |
+| `mismatch` | a loop1 frame or a deep1 line differs from what its parameters and the data regenerate (§12, §16) |
 | `hash_drift` | a reads file named by a loop1 `act` no longer hashes to its pinned sha256 (§12) |
 | `bad_map` | a tensor map breaks §14: its kind, a name, the name order, a dtype, a rank, a value, or the names and ranks its kind defines (§14) |
 | `kind_mismatch` | a tensor map of one kind is given where another kind is required, or a view map is asked to invert (§14) |
+| `bad_stage` | a deep1 composition has 0 or more than 64 stages, a stage's grid is not 256 per channel of the stage before, or a record names other stages than the webs given (§16) |
+| `bad_deep` | a deep1 record breaks the §16 grammar: header, stage count, numbering or fields (§16) |
 | `no_gradients` | an optimizer step is asked for before any gradients were accumulated (§15) |
 
 ## §6 Fidelity
@@ -175,6 +179,7 @@ A web is already a tensor: for an `r = 2`, `H = 64`, `d = 3` image it is 4,547 n
 
 - Hidden units can be permuted without changing the render, so two webs of one image may differ only by a permutation. A reader must be permutation-invariant, or every web it reads must be fitted from the same initial weights (the reference encoder's `seed`).
 - Webs of different `H`, `r` or `d` have different shapes and are not comparable tensors.
+- Depth comes by composition, not by a deeper format: a deep net is an ordered list of webs (§16).
 
 ## §8 Predicates
 
@@ -206,7 +211,6 @@ decipher(seq) = the inverse, then unpack; any other input is refused (§5)
 - **Shape.** A web of `n` bytes is `11 n / 2` nt. The 9,110-byte sample is 50,105 nt. This is a storage form, not compression: it is 1.375 bits per base, against a maximum of 2.
 - **Constraints.** No base is ever repeated (longest run 1), after Goldman et al. 2013. The keystream makes the sequence look random, so GC content is near 50% (sample: 0.5009) and long repeats are unlikely. The keystream is public and fixed. It is not encryption and hides nothing.
 - **Root.** The sequence root is `sha256(ascii(seq))`. With a 32-byte salt, `sha256(salt || ascii(seq))` and the length in nt are what a `Bases` chromosome token commits (`wetware-hq/bases`). The sequence root never stands in for the web root (§4).
-- **CGR.** `fcgr(seq, k)` draws the frequency chaos-game image of a sequence (Jeffrey 1990): the count of each k-mer on a `2^k × 2^k` grid, scaled so the most common is 255 and every present k-mer is at least 1. A dna1 sequence holds no k-mer with a repeated base, so its image is zero everywhere else, and the excluded k-mers form a visible fractal. The image is itself media, so it can be fitted as a web, which closes the loop web → DNA → image → web.
 - **Autoencoder reading.** Fitting is the encoder, the web weights are the latent code, dna1 is the channel code, and decipher plus §3 decode is the decoder.
 - **One strand.** A dna1 sequence has no index and no error correction. A substitution changes about one 16-bit word, or is refused if it makes a repeat. An insertion or deletion shifts every later word and is almost always refused. §10 splits it into oligos that can be synthesized and survive loss and substitutions.
 
@@ -216,7 +220,6 @@ decipher(seq) = the inverse, then unpack; any other input is refused (§5)
 | D2 | `decipher(encipher(b)) == b` for every accepted web `b` |
 | D3 | no sequence from `encipher` repeats a base |
 | D4 | `decipher` refuses every sequence that `encipher` could not have written |
-| D5 | the non-zero cells of `fcgr(seq, k)` for a pinned sequence are exactly the k-mers with no repeated base |
 | D6 | `sequence == sha256(ascii(seq))` for every pinned sequence |
 
 ## §10 Oligo pool `pool1`
@@ -253,29 +256,9 @@ unpool(reads, id):
 | D10 | a substitution in one read is outvoted wherever another two valid reads cover the base |
 | D11 | `unpool` refuses (`gap`, `tie`, `homopolymer`, `bad_pool`) rather than return a sequence the reads do not determine |
 
-## §11 Text glyph `cgr1`
+## §11 Retired
 
-`cgr1` prints the k-mer counts of a sequence (§9 CGR, `1 ≤ k ≤ 6`) as plain text an agent reads directly, without an image decoder. It borrows four features from QR codes (ISO/IEC 18004): a format line, finder corners, a coordinate system and a check value. It is a view of a sequence, not a store: the store is dna1 and pool1.
-
-```text { type: notebook.cell }
-%cgr1 k=<k> nt=<len> peak=<max count> present=<cells > 0>/<4^k> sequence=<sha256(ascii(seq))>     # format line
-%ramp " .:-=+*#%@"                                  # space = absent, "." = least present, "@" = peak
-<k column-label lines, offset k + 2>                # line j, column x: K if bit j of x else M  (M = A|C, K = G|T)
-<k + 1 spaces>C<2^k dashes>G                        # finder corners: the base whose k-mer fills that corner
-<row label> |<2^k ramp characters>|                 # row r: S if bit j of (2^k - 1 - r) else W  (S = C|G, W = A|T)
-<k + 1 spaces>A<2^k dashes>T
-%counts sha256:<sha256 of the counts, row 0 first, decimal ASCII joined by single spaces>
-```
-
-- **Cell address.** Letter `j` of a cell's k-mer, oldest base first, is where its column and row labels meet: `M∩S = C`, `M∩W = A`, `K∩S = G`, `K∩W = T` (IUPAC codes). An agent cites a cell by its k-mer and never needs coordinates.
-- **Biology on the axes.** Row labels are strong/weak bonding, so a row's `S` count is that k-mer's GC count. Column labels are amino/keto.
-- **Level.** A cell's character is `ramp[0]` if its count is 0, else `ramp[1 + (g - 1) * 8 // 254]`, where `g` is the §9 gray level.
-- **Check.** The footer hash covers the exact counts, not the ramp, so two readers agree on what was read only if they also agree on `sha256`.
-
-| Id | Predicate |
-|---|---|
-| D12 | every pinned glyph in `web.json` equals `glyph` of its sequence |
-| D13 | for every cell, the k-mer spelled by its labels is present in the sequence exactly when the cell is not a space |
+The `cgr1` text glyph and the chaos-game image were excised. The number and the predicates D5, D12 and D13 are not reused. A sequence is pictured through its web (§12 `view1`).
 
 ## §12 Pseudovisual chain of thought `loop1`
 
@@ -287,21 +270,21 @@ header  := "%loop1 nt=" n " sequence=" sha256(ascii(seq)) " web=" root(decipher(
 frame   := "%frame " i " " kind " " params, then its body lines; i counts from 0
 kind    := think | hypothesis act observe            # a hypothesis is always followed by its act, then its observe
 think       view=web size=<1-64, at most the shorter grid side>  -> view1 body     # the web's render, block-mean luminance, " .:-=+*#%@" dark to bright
-think       view=cgr k=<1-6>      -> cgr1 glyph §11
-hypothesis  expect=intact k=<1-6> -> cgr1 glyph of the data at k: the picture it predicts
-hypothesis  expect=refused:gap|tie|homopolymer|bad_pool k=<1-6> -> no body: it predicts unpool refuses with that §5 code
+hypothesis  expect=intact size=<1-64>        -> view1 of the data's web: the picture it predicts
+hypothesis  expect=refused:<code> size=<1-64> -> no body: it predicts the read-back refuses with that §5 code
+            # code: gap|tie|homopolymer|bad_pool (unpool), bad_length|bad_word|too_large|bad_magic|bad_header|truncated|trailing_bytes|bad_weight (decipher)
 act         op=lose   file=<0-8> oligos=<distinct ascending pool indices >= 0, comma-joined>
 act         op=damage file=<0-8> seed=<u63> drop=<per mille> sub=<per mille> flip=<per mille>
 act         op=reads  file=<0-8> sha256=<hex of the reads file> path=<[A-Za-z0-9._/-]+, under the loop file's directory>
 observe     outcome=refused:<code> verdict=<v>                                   -> no body
-observe     outcome=intact|changed sequence=<hex> used=<n> dropped=<n> verdict=<v>  -> cgr1 glyph at the hypothesis k, then a diff
+observe     outcome=intact|changed sequence=<hex> web=<root> used=<n> dropped=<n> verdict=<v>  -> view1 of the read-back web at the hypothesis size, then a diff
 head    := "%head " h_n, h_0 = sha256("loop1"), h_(j+1) = sha256(h_j raw || block j)   # header, then each frame block, as ASCII
 ```
 
-- **Act.** Every op ends in `unpool` (§10). `lose` drops the listed oligos of `pool(seq, file)`. `damage` draws `u(j, s)` = the first 8 bytes (big-endian) of `sha256("loop1/damage" || u64be(seed) || u64be(j) || u64be(s))` and hits when `u * 1000 < rate * 2^64`: slot 0 drops oligo `j`, slot `2 + p` substitutes base `p` with `ACGT[(index + 1 + (u >> 32) mod 3) mod 4]`, and slot 1 reads the oligo from the other strand. `reads` unpools a file of real sequencing reads, pinned by hash, so a wet-lab read-back is a loop too.
-- **Verdict.** The outcome is `refused:<code>`, `intact` (the unpooled sequence is the data) or `changed`. The verdict is `supports` when the outcome equals `expect`, else `refutes`. It is computed, never written by the agent.
-- **Diff.** `%diff k=<k> changed=<cells>/<4^k>` and a `%key` line, then the §11 frame with one character per cell: space absent in both, `=` same count, `+` more, `-` fewer, `!` appeared, `?` vanished.
-- **No prose.** Every line is a fixed-grammar header or a picture an agent addresses by k-mer or by grid cell. A loop says only what its data and its experiments regenerate.
+- **Act.** Every op ends in `unpool` (§10), then `decipher` (§9): the read-back is a web. `lose` drops the listed oligos of `pool(seq, file)`. `damage` draws `u(j, s)` = the first 8 bytes (big-endian) of `sha256("loop1/damage" || u64be(seed) || u64be(j) || u64be(s))` and hits when `u * 1000 < rate * 2^64`: slot 0 drops oligo `j`, slot `2 + p` substitutes base `p` with `ACGT[(index + 1 + (u >> 32) mod 3) mod 4]`, and slot 1 reads the oligo from the other strand. `reads` unpools a file of real sequencing reads, pinned by hash, so a wet-lab read-back is a loop too.
+- **Verdict.** The outcome is `refused:<code>`, `intact` (the unpooled sequence is the data) or `changed` (another sequence that deciphers to another web). The verdict is `supports` when the outcome equals `expect`, else `refutes`. It is computed, never written by the agent.
+- **Diff.** `%diff size=<n> changed=<cells>/<n²>` and a `%key` line, then the view1 frame with one character per cell: `=` same level, `+` brighter, `-` darker in the read-back web than in the data's.
+- **No prose.** Every line is a fixed-grammar header or a picture an agent addresses by grid cell. A loop says only what its data and its experiments regenerate.
 - **Head.** The head names the whole loop and is 32 bytes, so it fits a `bytes32`. A `Bases` print `receipt` is the head of the print's read-back loop (`wetware-hq/bases`): its last hypothesis is `expect=intact`, its act is `op=reads` on the print's sequencing reads, and anyone holding the loop, the sequence and the reads can replay it.
 - **Sample.** `samples/astronaut-64.loop.txt`, from `samples/astronaut-64.loop.json`, refutes "pool1 survives 2% oligo loss and 0.1% substitutions" (`tie`: bases covered by only two oligos cannot outvote one error), supports the revised "loss alone is survivable", and supports "losing oligo 0 is a gap" (the first 25 bases are in one oligo).
 
@@ -316,8 +299,9 @@ head    := "%head " h_n, h_0 = sha256("loop1"), h_(j+1) = sha256(h_j raw || bloc
 The stack is one primitive with layers over it. A **sequence** (§0) is the primitive: one ASCII string over `ACGT`, named by `dna.md` and defined here. Everything the stack calls DNA is that object. `docs/organize-stack.md` maps which repository holds which layer; this section is what binds them.
 
 ```text { type: notebook.cell }
+web --deep1--> deep net                                             # stages composed, §16
 media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two-way
-                                   |--cgr1/loop1--> glyph, loop     # views, one-way
+                                   |--loop1-------> loop            # a view, one-way
                                    |--tess1------->  plan            # wetware-hq/tesseract
                                    +--salted root-> token            # wetware-hq/bases --> helix page
 ```
@@ -328,8 +312,8 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 | sequence | sequence root | `sha256(ascii(seq))` (§9) |
 | sequence on chain | chain root | `sha256(salt \|\| ascii(seq))` (§9); Bases `root`, helix `sequence-root` |
 | oligo pool | pool digest | `sha256` of the pool file, over the sequence root it rebuilds (§10) |
-| glyph | counts root | `sha256` of the k-mer counts (§11) |
 | loop | head | the frame hash chain (§12) |
+| deep net | deep head | the stage hash chain over web roots and interface roots (§16) |
 | plan | plan root | `sha256` of the canonical `.tess` bytes (`wetware-hq/tesseract`) |
 | token | token id | the chain root and length it was minted with (`wetware-hq/bases`) |
 | page | locus root | the fold over a page's claims (`wetware-hq/helix`) |
@@ -338,8 +322,8 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 - **One primitive.** A `dna1` sequence (§9), a `pool1` oligo (§10) and a target or part of a build plan are sequences under extra constraints, not other formats. A layer may narrow what is valid; it may not widen the alphabet, change the record form, or accept `N`, a gap or lower case.
 - **One root rule.** Nothing in the stack hashes a sequence another way. A salt is 32 bytes and is kept with the sequence, never on chain (§9). The sequence root and the chain root of one sequence differ, and only a holder of the salt can show they name the same sequence; so an off-chain object that names a sequence (a plan target, a loop header) carries the sequence root and reaches a chromosome by token id, never by comparing it with the chain root.
 - **No crossed names.** The values in the table above name different objects. A reader given one where another is required refuses (`root_mismatch`), and never tries the other interpretation.
-- **Bases stay in sequence files.** Only a `.dna` record and a pool file hold bases. A token holds a root and a length, a page holds claims, and a glyph, a diff and a loop hold counts and hashes. Nothing above the sequence layer stores a base, so an agent can hold, print and cite a chromosome it cannot read.
-- **Two-way or a view.** `web ↔ dna1` and `sequence ↔ pool1` reproduce their input exactly. `media → web` is a measured approximation (§6), and a glyph or a loop is regenerated from the sequence, never read back into one (§1).
+- **Bases stay in sequence files.** Only a `.dna` record and a pool file hold bases. A token holds a root and a length, a page holds claims, and a view, a diff, a loop and a deep record hold levels, counts and hashes. Nothing above the sequence layer stores a base, so an agent can hold, print and cite a chromosome it cannot read.
+- **Two-way or a view.** `web ↔ dna1` and `sequence ↔ pool1` reproduce their input exactly. `media → web` is a measured approximation (§6), and a loop or a deep record is regenerated from its data, never read back into it (§1).
 - **Refuse, never guess.** Every conversion returns what the data determines or a §5 code. No layer repairs another layer's object.
 - **One tensor map.** Every object in the table has exactly one §14 tensor map, defined by the repository that owns it. It is the only form in which a layer hands its object to a network, and the map's kind travels with its bytes.
 - **Pin a neighbour.** A repository in the stack cites and pins its neighbours by commit; it never vendors their files (`docs/pin-sources.md`). web holds the lowest layer that stores a sequence, so it needs no neighbour at run time.
@@ -350,7 +334,7 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 | S2 | every root of a sequence in `web.json` equals `sha256(ascii(seq))`; no other sequence hash is pinned |
 | S3 | no pinned value is cited under two names, and no check accepts one root in place of another |
 | S4 | no file outside `*.fa`, a pool file and a `sequence` or `pool` tensor map holds a base of a pinned sequence |
-| S5 | `decipher(encipher(b)) == b` and `unpool(pool(seq)) == seq`; a glyph or a loop is regenerated, not stored as data |
+| S5 | `decipher(encipher(b)) == b` and `unpool(pool(seq)) == seq`; a loop or a deep record is regenerated, not stored as data |
 | S6 | every refused conversion returns a §5 code and no output |
 | S7 | every object kind in the stack has exactly one §14 tensor map, and every map pinned here is the map of its object |
 
@@ -379,8 +363,8 @@ root    := sha256(tmap), cited tmap1:<root>
 | `web` | `activation uint8 []`, `omega0 uint16 []`, `grid uint16 [r]`, `w1 float16 [r,H]`, `b1 float16 [H]`, `w2 float16 [H,H]`, `b2 float16 [H]`, `w3 float16 [H,d]`, `b3 float16 [d]` | exact; the six weight contents are the web's own §2 weight bytes | web |
 | `sequence` | `bases uint8 [nt]`, values `0-3` index `ACGT` | exact; one-hot is the view `tf.one_hot(bases, 4)` | web |
 | `pool` | `file uint8 []`, `oligos uint8 [m,117]` in pool order | exact; inverts to the `ref/dna.py pool` file | web |
-| `glyph` | `counts int64 [2^k,2^k]` (§11 grid, row 0 first), `k uint8 []` | view; `counts_root(counts)` is the §11 counts root | web |
 | `loop` | `chain uint8 [b+1,32]` (h_0 … head over b blocks), `kind uint8 [f]` (0 think, 1 hypothesis, 2 act, 3 observe), `verdict uint8 [f]` (0 none, 1 supports, 2 refutes) | view; `chain[-1]` is the §12 head | web |
+| `deep` | `chain uint8 [n+1,32]` (h_0 … head over n stages), `outs uint8 [n,32]` (interface roots), `webs uint8 [n,32]` (stage web roots) | view; `chain[-1]` is the §16 head | web |
 | `state` | `grid uint16 [r]`, `omega0 uint16 []`, `d_out uint8 []`, `step int64 []`, the trainable tensors `float32`, `m_*` and `v_*` `float32` (Adam's moments, one per trainable); the fit's plan: `learning_rate`, `beta1`, `beta2`, `eps`, `weight_decay`, `grad_clip_norm` `float64 []`, `schedule uint8 []` (0 constant, 1 linear), `total int64 []`, `batch int64 []`, `seed uint64 []`; with an adapter also `base uint8 [32]`, `rank uint16 []` and the base's six weights `float16` | exact; resumes a fit (§15) | web |
 | `adapter` | `base uint8 [32]` (the base web root), `<w>_down float16 [rows,k]` and `<w>_up float16 [k,cols]` for each patched `<w>` of `w1`, `w2`, `w3` | exact; merges into a new web (§15) | web |
 | `plan` | the `.tess` tree as tensors | defined by `wetware-hq/tesseract` | tesseract |
@@ -433,6 +417,36 @@ merge(web, adapter) -> web W + down @ up in binary64 per patched matrix, then pa
 | U4 | `merge(samples/astronaut-64.web, samples/astronaut-64.r8.adapter.tmap)` hashes to the root `web.json` `tune` pins, and decodes within 0.01 dB of its PSNR |
 | U5 | an adapter merged onto any web but its base is `root_mismatch`; a map of another kind is `kind_mismatch`; an adapter missing a factor or with a factor of another dtype or shape is `bad_map` |
 
+## §16 Composition `deep1`
+
+A deep net is a composition of shallow ones. Each stage is an ordinary web (§2), so composing adds depth without adding a second network form. `ref/deep.py` is the reference; replay is normative.
+
+```text { type: notebook.cell }
+deep(w_0)       = decode(w_0)                                   # depth 1: a web is a deep net of one stage (§3)
+deep(w_0 .. w_n) = stage(w_n, deep(w_0 .. w_(n-1)))             # depth n + 1, by induction
+stage(w, L)     = levels(forward(w, AXIS[L]))  per grid point   # AXIS = the §3 axis of size 256: AXIS[l] = -1 + 2l/255
+requires          grid(w_i) = (256,) * d(w_(i-1)) for i >= 1    # a stage's input rank is the channel count before it
+out_i           = sha256(levels of stage i)                     # uint8, row-major over grid(w_0) + (d_i,)
+h_0 = sha256("deep1"),  h_(i+1) = sha256(h_i || root(w_i) || out_i)   # raw 32-byte values; head = h_n
+record := "%deep1 stages=" n " grid=" grid(w_0) LF
+          ("%stage " i " web=" root(w_i) " d=" d_i " out=" out_i LF) * n
+          "%head " h_n LF
+```
+
+- **Induction.** A stage reads the levels before it as positions on its own grid of 256 levels per axis, so `stage(w, L)` is `decode(w)` read at index `L`. Composing uses only the §3 decode. As in §3, two maths libraries can disagree on a level only where a stage's output lies within rounding error of a half, so a record replays byte for byte on one library; `ref/deep.py` evaluates every stage in the same 4,096-point batches as `decode`. A deep net of n stages is a sine network of 2n hidden layers with a uint8 bottleneck between each pair of stages. Universal approximation (`docs/pin-sources.md` §Theory) is a claim about one stage; composing a stage onto a deep net is the only way to make a deeper one.
+- **Interfaces are bound.** The interface between two stages is a uint8 tensor, so it has one byte form and one root, `out_i`. The chain binds each stage's web root to the interface it wrote, so a 32-byte head fits a `bytes32` and names every stage and every interface (`systems/commit-web.md`). Each link `(root(w_i), out_(i-1), out_i)` has the shape of the statement a ZKML proof certifies, that a committed model produced this output from this input (Chen et al., EuroSys 2024). ZKML computes in fixed point and looks up non-linearities in tables. A uint8 interface fits that, but the binary64 `sin` of §3 does not, so no proof system is pinned and replay is the verifier.
+- **Refuse, never guess.** A stage that does not fit the interface before it, or a composition of 0 or more than 64 stages, is `bad_stage`. A record off the grammar is `bad_deep`, a head that is not the chain of its lines is `bad_head`, a web that is not the stage it is named for is `root_mismatch`, and a line that does not replay is `mismatch`.
+- **A view.** A record is regenerated from its webs and never read back into one, like a loop (§13, S5).
+- **Sample.** `samples/luma.web` is a 34-byte stage set by hand, not fitted (`ref/deep.py luma`): `H = 1`, `omega0 = 1`, `y = sin(sin(ε c·x)) / ε` with the BT.601 weights `c = (0.299, 0.587, 0.114)` and `ε = 1/64`, so its grid is `256 × 256 × 256` and `d = 1`. `samples/astronaut-64.luma.deep` composes the sample web with it. The two-stage deep net renders the astronaut's luma at 32.47 dB against the BT.601 luma of the source, and its head is pinned in `web.json` `composition`.
+
+| Id | Predicate |
+|---|---|
+| C1 | `deep([w]) == decode(w)`, and every record pinned in `web.json` `composition` replays byte for byte from its webs and hashes to its pinned sha256 and head |
+| C2 | `deep(w_0 .. w_n)` is `decode(w_n)` read at the levels of `deep(w_0 .. w_(n-1))`, and its first n interfaces are those of `deep(w_0 .. w_(n-1))` |
+| C3 | a stage whose grid is not 256 per channel of the stage before is `bad_stage`, and nothing is written |
+| C4 | the head is the §16 chain over each stage's web root and interface root, so changing any stage or any interface changes the head |
+| C5 | every refused record returns a §5 code and no head |
+
 ## Citations
 
 - Universal approximation: Cybenko 1989, Hornik 1991 (`docs/pin-sources.md` §Theory).
@@ -441,7 +455,8 @@ merge(web, adapter) -> web W + down @ up in binary64 per patched matrix, then pa
 - Networks reading weights: functa, arXiv:2201.12204; DWSNets, arXiv:2301.12780.
 - Tensors and their wire form: TensorFlow `DataType` and `TensorProto` (`tensorflow/core/framework/types.proto`, `tensor.proto`; `docs/pin-sources.md` §Tensors).
 - Training API, checkpoints and LoRA heuristics: Tinker (`tinker-docs.thinkingmachines.ai`); LoRA, arXiv:2106.09685; AdamW, arXiv:1711.05101.
-- DNA storage, rotating code and CGR: Goldman et al. 2013; Jeffrey 1990; iCGR, arXiv:1712.04546; JPEG-DNA, arXiv:2103.09616 (`docs/pin-sources.md` §DNA).
+- DNA storage and rotating code: Goldman et al. 2013; JPEG-DNA, arXiv:2103.09616 (`docs/pin-sources.md` §DNA).
+- Committed models and proofs of inference: ZKML, Chen et al., EuroSys 2024 (`docs/pin-sources.md` §Composition).
 
 ## Falsification
 
@@ -449,9 +464,10 @@ merge(web, adapter) -> web W + down @ up in binary64 per patched matrix, then pa
 - Two decodes of one web on one machine differ.
 - `python ref/web.py check samples/astronaut-64.web samples/astronaut-64.png` prints a PSNR more than 0.01 dB from `web.json`.
 - `python ref/dna.py decipher samples/astronaut-64.fa out.web` writes bytes other than `samples/astronaut-64.web`.
-- A sequence in the stack is hashed two different ways, or a token, a page, a glyph or a loop is found holding bases (§13).
+- A sequence in the stack is hashed two different ways, or a token, a page or a loop is found holding bases (§13).
 - `python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt` refuses, or prints a head other than `web.json`.
 - `python ref/tensor.py map web samples/astronaut-64.web out.tmap` writes bytes other than `samples/astronaut-64.web.tmap`, or `tf.io.parse_tensor` reads one of its records to another dtype, shape or value (§14).
+- `python ref/deep.py verify samples/astronaut-64.luma.deep samples/astronaut-64.web samples/luma.web` refuses, or prints a head other than `web.json` `composition` (§16).
 - `python ref/tune.py merge samples/astronaut-64.web samples/astronaut-64.r8.adapter.tmap out.web` writes a web whose root is not `web.json` `tune` `merged` (§15).
 
 ## Licence

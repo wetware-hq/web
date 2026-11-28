@@ -23,7 +23,7 @@ def path(p):
 
 
 def mapped(m):
-    return tensor.of_file(m["kind"], path(m["of"]), m.get("k", 3))
+    return tensor.of_file(m["kind"], path(m["of"]))
 
 
 try:
@@ -61,12 +61,6 @@ class Samples(unittest.TestCase):
         t = tensor.unpack(tensor.of_web(blob))[1]
         weights = b"".join(t[n].tobytes() for n in ("w1", "b1", "w2", "b2", "w3", "b3"))
         self.assertEqual(weights, blob[12 + 2 * len(w["header"]["grid"]) :])
-
-    def test_glyph_counts_root(self):
-        s = PINS["dna"][0]
-        m = [m for m in MAPS if m["kind"] == "glyph"][0]
-        counts = tensor.unpack(mapped(m))[1]["counts"]
-        self.assertEqual(dna.counts_root(counts), s["glyph"]["counts"])
 
     def test_loop_chain_ends_at_head(self):
         s = PINS["dna"][0]

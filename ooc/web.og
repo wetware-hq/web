@@ -1,11 +1,11 @@
 ::meta
 title: web route and file index
-version: 6
+version: 7
 updated: 2026-11-28
-domain: web|shallow-nn|universal-approximator|media|on-chain|dna-primitive|stack|tensor-map
+domain: web|shallow-nn|universal-approximator|deep-by-composition|media|on-chain|dna-primitive|stack|tensor-map
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:f73457b9af04e821b2f200bf554bf42b4c13be1b683e6ff1ee2851732500f8a0
+checksum: sha256:5adf19f39ad7f126e98b62ae7998921e10161b536feef735541833d405309f48
 ::end
 
 ::schema
@@ -19,16 +19,16 @@ scope-levels: [all, encoder, decoder, committer]
 banner | meta | all | 1.00 | academic, lossy, not-provenance
 seq | primitive | all | 1.00 | dna.md, .dna, ACGT, sequence-root, chain-root (salted; bases root, helix sequence-root), S1-S6
 stack | map | all | 1.00 | tesseract, web, bases, helix, boundary-values, no-crossed-names
-contract | stage | all | 1.00 | .web, web1, bytes, decode, root, refusals, fidelity, deep-net-form, W1-W8
-pins | stage | all | 1.00 | cybenko-1989, hornik-1991, siren, coin, functa, dwsnets, astronaut@88431cd9
+contract | stage | all | 1.00 | .web, web1, bytes, decode, root, refusals, fidelity, deep-net-form, W1-W8, C1-C5
+pins | stage | all | 1.00 | cybenko-1989, hornik-1991, siren, coin, functa, dwsnets, zkml-2024, bt601, astronaut@88431cd9
 cyber | stage | all | 0.50 | receptive-field, sinusoid-basis, closed-loop, hypothesis
 encode | skill | encoder | 1.00 | sine-2x64, adam, binary16, seed, not-normative
 decode | skill | decoder | 1.00 | binary64, round-half-even, psnr, root-check
 commit | system | committer | 1.00 | bytes32-root, calldata, commit-reveal, chain-null, 145544-gas
 web1:3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89 | web | all | 1.00 | astronaut-64, 9110-bytes, psnr-31.18
-dna1 | system | all | 1.00 | synthetic-dna, rotating-code, no-homopolymer, cgr, bases-root, D1-D6
+dna1 | system | all | 1.00 | synthetic-dna, rotating-code, no-homopolymer, bases-root, D1-D4, D6
 pool1 | system | all | 1.00 | oligo-pool, 117nt, 4x-overlap, index-parity, revcomp, majority-vote, D7-D11
-cgr1 | system | all | 1.00 | text-glyph, qr-finder-corners, iupac-axes, counts-root, D12-D13
+deep1 | system | all | 1.00 | composition, induction, shallow-to-deep, 256-level-interface, stage-chain, deep-head, zkml-link, C1-C5
 loop1 | system | all | 1.00 | pseudovisual-cot, think, hypothesis, act, observe, diff, hash-chain, print-receipt, D14-D16
 tmap1 | system | all | 1.00 | tensor-map, .tmap, tensorflow-DataType, TensorProto, tensor-root, exact-or-view, T1-T4
 klines | memory | all | 1.00 | k-line, minsky-1980, replicated, refuse-never-guess, computed-verdict, exact-or-view, one-root-rule, replay-normative, machine-is-data, pin-never-vendor, finalized-block, specbase-shape, K1-K9
@@ -61,6 +61,7 @@ Load docs/follow-agent-contract.md.
 ->[:precedes] encode
 ->[:precedes] decode
 ->[:precedes] cyber
+->[:precedes] deep1
 ->[:refuses] bad_magic
 ->[:refuses] bad_header
 ->[:refuses] truncated
@@ -158,7 +159,7 @@ The pinned sample web; its source is samples/astronaut-64.png.
 
 ::node [id=dna1 type=system confidence=1.00 scope=all updated=2026-11-26]
 ::dense
-ref=ref/dna.py|11nt-per-2-bytes|run=1|gc=0.5009|nt=50105|fcgr-k6|D1-D6
+ref=ref/dna.py|11nt-per-2-bytes|run=1|gc=0.5009|nt=50105|D1-D4,D6
 ::end
 ::full
 Load docs/follow-agent-contract.md §9. samples/astronaut-64.fa deciphers to samples/astronaut-64.web.
@@ -172,7 +173,6 @@ Load docs/follow-agent-contract.md §9. samples/astronaut-64.fa deciphers to sam
 ->[:refuses] bad_word
 ->[:refuses] bad_salt
 ->[:precedes] pool1
-->[:precedes] cgr1
 ::end
 ::end
 
@@ -193,28 +193,32 @@ Load docs/follow-agent-contract.md §10. samples/astronaut-64.pool.fa unpools to
 ::end
 ::end
 
-::node [id=cgr1 type=system confidence=1.00 scope=all updated=2026-11-26]
+::node [id=deep1 type=system confidence=1.00 scope=all updated=2026-11-28]
 ::dense
-ref=ref/dna.py|glyph|k=1-6|ramp=10|corners=C,G,A,T|cols=M/K|rows=S/W|counts-sha256|D12-D13
+ref=ref/deep.py|deep(w0)=decode(w0)|deep(w0..wn)=stage(wn,deep(w0..wn-1))|grid(wi)=256^d(wi-1)|out=sha256(levels)|h0=sha256(deep1)|h=sha256(h||web-root||out)|sample=astronaut-64+luma(34B)|psnr=32.47|C1-C5
 ::end
 ::full
-Load docs/follow-agent-contract.md §11. samples/astronaut-64.cgr3.txt is the k=3 glyph of samples/astronaut-64.fa. A view, not a store.
+Load docs/follow-agent-contract.md §16. samples/astronaut-64.luma.deep composes samples/astronaut-64.web with samples/luma.web; its head is pinned in web.json composition. A view, not a store.
 ::end
 ::edges
-->[:requires] dna1
-->[:refuses] bad_header
+->[:requires] contract
+->[:refuses] bad_stage
+->[:refuses] bad_deep
+->[:refuses] bad_head
+->[:refuses] root_mismatch
+->[:refuses] mismatch
 ::end
 ::end
 
 ::node [id=loop1 type=system confidence=1.00 scope=all updated=2026-11-26]
 ::dense
-ref=ref/loop.py|think=view1,cgr1|hypothesis=intact,refused:code|act=lose,damage,reads|observe=glyph+diff|verdict=computed|head=sha256-chain|bases-receipt|D14-D16
+ref=ref/loop.py|think=view1|hypothesis=view1,refused:code|act=lose,damage,reads>unpool>decipher|observe=view1+diff|verdict=computed|head=sha256-chain|bases-receipt|D14-D16
 ::end
 ::full
 Load docs/follow-agent-contract.md §12. samples/astronaut-64.loop.txt is the sample loop over samples/astronaut-64.fa; its head is pinned in web.json.
 ::end
 ::edges
-->[:requires] cgr1
+->[:requires] dna1
 ->[:requires] pool1
 ->[:refuses] bad_loop
 ->[:refuses] bad_head
@@ -225,7 +229,7 @@ Load docs/follow-agent-contract.md §12. samples/astronaut-64.loop.txt is the sa
 
 ::node [id=tmap1 type=system confidence=1.00 scope=all updated=2026-11-27]
 ::dense
-ref=ref/tensor.py|tensor.md|tmap1=kind+named-records|dtype=tensorflow-DataType|record=TensorProto(dtype,shape,tensor_content)|root=sha256(bytes)|exact=web,sequence,pool|view=glyph,loop|neighbours=plan,token,order,board|T1-T4
+ref=ref/tensor.py|tensor.md|tmap1=kind+named-records|dtype=tensorflow-DataType|record=TensorProto(dtype,shape,tensor_content)|root=sha256(bytes)|exact=web,sequence,pool|view=loop,deep|neighbours=plan,token,order,board|T1-T4
 ::end
 ::full
 Load tensor.md, then docs/follow-agent-contract.md §14. Every stack object has exactly one tensor map; samples/astronaut-64.web.tmap is the map of samples/astronaut-64.web and every sample map root is pinned in web.json tensors.
@@ -257,7 +261,7 @@ Load dna.md, then docs/follow-agent-contract.md §13. dna1, pool1 oligos and tes
 
 ::node [id=stack type=map confidence=1.00 scope=all updated=2026-11-26]
 ::dense
-wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;.dna,sequence-root;pool1;cgr1;loop1;.tmap,tensor-root)|bases(token,chain-root+length)|helix(dna:,locus-root)
+wetware-hq>tesseract(.tess,plan-root)|web(.web,web-root;deep1,deep-head;.dna,sequence-root;pool1;loop1;.tmap,tensor-root)|bases(token,chain-root+length)|helix(dna:,locus-root)
 ::end
 ::full
 Load docs/organize-stack.md. Only roots cross upward; only sequence files hold bases.
@@ -295,5 +299,6 @@ v3=loop1-pseudovisual-cot|astronaut-64-loop
 v4=dna-primitive|stack-map|S1-S6
 v5=tmap1-tensor-maps|tensorflow-DataType|S7|T1-T4
 v6=k-line-register|replicated-moves|K1-K9
+v7=deep1-composition|stage-chain|C1-C5|cgr1-and-qr-excised
 ::end
 ::end

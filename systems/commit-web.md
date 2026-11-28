@@ -13,8 +13,8 @@ A web is small enough to live on chain in full, and its root is a 32-byte commit
   "role": "commit a web root on chain and read the web back by root",
   "reads": ["*.web", "web.json"],
   "writes": ["chain (once a contract is pinned)"],
-  "must": ["commit the root, not a render", "check the root on every read", "never rewrite a committed root"],
-  "check": ["W3", "W6"]
+  "must": ["commit the root, not a render", "check the root on every read", "never rewrite a committed root", "commit a deep net by its head, its stages by their roots"],
+  "check": ["W3", "W6", "C4"]
 }
 ```
 
@@ -48,6 +48,10 @@ read(R):
 
 - Mint should follow the commit-reveal pattern of `wetware-hq/bases`, so that a root seen in the mempool cannot be front-run: commit `sha256(R || secret)`, wait, then reveal `R` and the bytes.
 - The root is fixed once committed (contract §1, W6). Transfers change who holds a web, never its bytes.
+
+## Composition
+
+A deep net (contract §16) is committed as its 32-byte head. Each stage web is committed by its own root, as above, and the head binds those roots to the interface roots in order. A reader fetches every stage by root, checks each one, and replays the record: `ref/deep.py verify` refuses `root_mismatch` for a wrong stage and `mismatch` for an interface that does not replay. A proof of each stage would let a reader check an interface without the weights (ZKML, `docs/pin-sources.md` §Composition). No proof system is pinned, so replay is the only check.
 
 ## Cost
 

@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import deep  # noqa: E402
 import dna  # noqa: E402
 import loop  # noqa: E402
 import web  # noqa: E402
@@ -29,7 +30,7 @@ DTYPES = {1: "<f4", 2: "<f8", 3: "<i4", 4: "|u1", 5: "<i2", 6: "|i1", 9: "<i8", 
 CODES = {np.dtype(v): k for k, v in DTYPES.items()}
 
 EXACT = ("web", "sequence", "pool")
-VIEWS = ("glyph", "loop")
+VIEWS = ("loop", "deep")
 WEIGHTS = ("w1", "b1", "w2", "b2", "w3", "b3")
 LOOP_KINDS = ("think", "hypothesis", "act", "observe")
 VERDICTS = {"supports": 1, "refutes": 2}
@@ -190,13 +191,6 @@ def to_pool(blob):
     return "".join(f">pool1 file={t['file']} i={i}\n{o}\n" for i, o in enumerate(oligos)).encode("ascii")
 
 
-def of_glyph(seq, k):
-    """A cgr1 glyph's k-mer counts on the chaos-game grid (a view of the sequence, §11)."""
-    if not 1 <= k <= 6:
-        raise Refusal("bad_header", "k must be 1-6")
-    return pack("glyph", {"counts": dna.kmer_counts(seq, k).astype("<i8"), "k": np.uint8(k)})
-
-
 def of_loop(text):
     """A loop1 file as its hash chain h_0 .. head, its frame kinds and its written verdicts (a view, §12)."""
     blocks, h = loop.split(text)
@@ -212,6 +206,17 @@ def of_loop(text):
         "kind": np.array([LOOP_KINDS.index(f[2]) for f in frames], np.uint8),
         "verdict": np.array(verdicts, np.uint8),
     })
+
+
+def of_deep(text):
+    """A deep1 record as its stage web roots, interface roots and hash chain h_0 .. head (a view, §16)."""
+    deep.head(text)
+    ls = deep.parse(text)[1]
+
+    def roots(hexes):
+        return np.frombuffer(bytes.fromhex("".join(hexes)), np.uint8).reshape(len(hexes), 32)
+
+    return pack("deep", {"chain": roots(deep.chain([(w, o) for w, _, o in ls])), "outs": roots([o for _, _, o in ls]), "webs": roots([w for w, _, _ in ls])})
 
 
 # --- TensorFlow ------------------------------------------------------------------------------
@@ -241,14 +246,14 @@ def from_tf(kind, tensors):
 # --- files -----------------------------------------------------------------------------------
 
 
-def of_file(kind, path, k=3):
+def of_file(kind, path):
     p = Path(path)
     return {
         "web": lambda: of_web(p.read_bytes()),
         "sequence": lambda: of_sequence(dna.read_fasta(p)),
         "pool": lambda: of_pool(dna.read_pool(p)),
-        "glyph": lambda: of_glyph(dna.read_fasta(p), k),
         "loop": lambda: of_loop(p.read_bytes().decode("ascii")),
+        "deep": lambda: of_deep(p.read_bytes().decode("ascii")),
     }[kind]()
 
 
@@ -287,7 +292,6 @@ def main(argv=None):
     m.add_argument("kind", choices=EXACT + VIEWS)
     m.add_argument("src")
     m.add_argument("out")
-    m.add_argument("--k", type=int, default=3, help="glyph k, 1-6")
     sub.add_parser("show", help="print a tensor map's root, kind, names, dtypes and shapes").add_argument("tmap")
     u = sub.add_parser("unmap", help="write back the file an exact tensor map came from")
     u.add_argument("tmap")
@@ -295,7 +299,7 @@ def main(argv=None):
     a = ap.parse_args(argv)
     try:
         if a.cmd == "map":
-            out = of_file(a.kind, a.src, a.k)
+            out = of_file(a.kind, a.src)
         elif a.cmd == "show":
             sys.stdout.write(show(Path(a.tmap).read_bytes()))
             return 0

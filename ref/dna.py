@@ -19,7 +19,6 @@ START = "A"  # the base before the first base; the sequence never starts with it
 WORD_NT = 11  # one binary16 weight (2 bytes) is 11 trits, since 3**11 = 177,147 >= 2**16
 TAG = b"dna1"
 LINE = 80  # FASTA line width; layout only, never part of the sequence
-CGR_CORNER = {"A": (0, 0), "C": (0, 1), "G": (1, 1), "T": (1, 0)}  # (x, y), Jeffrey 1990
 COMPLEMENT = str.maketrans("ACGT", "TGCA")
 # pool1: oligos after Goldman et al. 2013
 SEG_NT = 100  # payload bases per oligo
@@ -28,8 +27,6 @@ LEN_TRITS = 20  # sequence length in the pool trailer; 3**20 > any dna1 length
 FILE_TRITS, INDEX_TRITS = 2, 12  # IX = file id, oligo index, parity trit
 IX_NT = FILE_TRITS + INDEX_TRITS + 1
 OLIGO_NT = 1 + SEG_NT + IX_NT + 1  # 117
-# cgr1: the text chaos-game glyph
-RAMP = " .:-=+*#%@"  # space = absent; "." = least present ... "@" = most frequent
 
 
 def keystream(n):
@@ -134,47 +131,6 @@ def longest_run(seq):
     return best
 
 
-def kmer_counts(seq, k):
-    """k-mer counts on the 2^k x 2^k chaos-game grid, row 0 at the top.
-
-    Bit j of a cell's column is base j's x corner and bit j of its height is its y corner, so the
-    newest base picks the quadrant, as in the CGR, where each point moves halfway to its base's corner.
-    """
-    n = 1 << k
-    counts = np.zeros((n, n), np.int64)
-    for i in range(len(seq) - k + 1):
-        x = y = 0
-        for bit, b in enumerate(seq[i : i + k]):
-            cx, cy = CGR_CORNER[b]
-            x |= cx << bit
-            y |= cy << bit
-        counts[n - 1 - y, x] += 1
-    return counts
-
-
-def gray(counts):
-    """255 at the most frequent k-mer, at least 1 for any k-mer present, 0 only if absent."""
-    img = np.rint(counts * 255.0 / max(int(counts.max()), 1)).astype(np.uint8)
-    img[(counts > 0) & (img == 0)] = 1
-    return img
-
-
-def fcgr(seq, k):
-    """Frequency chaos-game image of a sequence (Jeffrey 1990) as uint8 gray levels."""
-    return gray(kmer_counts(seq, k))[:, :, None]
-
-
-def allowed(k):
-    """Gray image of the k-mers a dna1 sequence may contain (no base repeated): 255, else 0."""
-    n = 1 << k
-    img = np.zeros((n, n, 1), np.uint8)
-    for code in range(4**k):
-        kmer = "".join(BASES[(code >> (2 * i)) & 3] for i in range(k))
-        if all(a != b for a, b in zip(kmer, kmer[1:])):
-            img[:, :, 0] |= np.where(fcgr(kmer, k)[:, :, 0] > 0, 255, 0).astype(np.uint8)
-    return img
-
-
 def revcomp(seq):
     return seq.translate(COMPLEMENT)[::-1]
 
@@ -270,76 +226,6 @@ def unpool(reads, file_id=0):
     return s5[:size], sum(map(len, got.values())), dropped
 
 
-def axis(v, k, one, zero):
-    return "".join(one if v >> j & 1 else zero for j in range(k))
-
-
-def counts_root(counts):
-    """sha256 of the k-mer counts in grid order (row 0 first), as decimal ASCII joined by spaces."""
-    return hashlib.sha256(" ".join(map(str, counts.ravel().tolist())).encode("ascii")).hexdigest()
-
-
-def glyph(seq, k):
-    """cgr1: the chaos-game grid as text an agent reads like a QR code (contract §11).
-
-    Column labels (M = A|C, K = G|T) and row labels (S = C|G, W = A|T) spell each cell's k-mer,
-    oldest base first; corners name the bases; the footer hash lets a reader check what it read.
-    """
-    if not 1 <= k <= 6:
-        raise web.Refusal("bad_header", "k must be 1-6")
-    counts = kmer_counts(seq, k)
-    g, n = gray(counts), 1 << k
-    lines = [
-        f"%cgr1 k={k} nt={len(seq)} peak={int(counts.max())} present={int((counts > 0).sum())}/{n * n} sequence={seq_root(seq)}",
-        f'%ramp "{RAMP}"',
-    ]
-    lines += grid(k, ["".join(RAMP[0] if v == 0 else RAMP[1 + (int(v) - 1) * (len(RAMP) - 2) // 254] for v in row) for row in g])
-    lines.append(f"%counts sha256:{counts_root(counts)}")
-    return "\n".join(lines) + "\n"
-
-
-def grid(k, rows):
-    """The labelled cgr1 frame around 2^k rows of 2^k characters: column labels, corners, row labels."""
-    n, pad = 1 << k, " " * (k + 1)
-    cols = [axis(x, k, "K", "M") for x in range(n)]
-    lines = [pad + " " + "".join(c[j] for c in cols) for j in range(k)]
-    lines.append(pad + "C" + "-" * n + "G")
-    lines += [axis(n - 1 - r, k, "S", "W") + " |" + row + "|" for r, row in enumerate(rows)]
-    lines.append(pad + "A" + "-" * n + "T")
-    return lines
-
-
-CELL = {("M", "S"): "C", ("M", "W"): "A", ("K", "S"): "G", ("K", "W"): "T"}
-
-
-def read_glyph(text):
-    """cgr1 text -> {k-mer: ramp character}, refusing a glyph whose frame or labels are off."""
-    lines = text.splitlines()
-    head = dict(f.split("=", 1) for f in lines[0].split()[1:]) if lines and lines[0].startswith("%cgr1 ") else {}
-    try:
-        k = int(head["k"])
-    except (KeyError, ValueError):
-        raise web.Refusal("bad_header", "not a cgr1 glyph") from None
-    n = 1 << k
-    if not 1 <= k <= 6 or len(lines) != 2 + k + n + 3:
-        raise web.Refusal("bad_header", "frame size")
-    pad = " " * (k + 1)
-    cols = ["".join(lines[2 + j][k + 2 + x] for j in range(k)) for x in range(n)]
-    if lines[2 + k] != pad + "C" + "-" * n + "G" or lines[3 + k + n] != pad + "A" + "-" * n + "T":
-        raise web.Refusal("bad_header", "corners")
-    if cols != [axis(x, k, "K", "M") for x in range(n)]:
-        raise web.Refusal("bad_header", "column labels")
-    cells = {}
-    for r in range(n):
-        line = lines[3 + k + r]
-        label, row = line[:k], line[k + 2 : -1]
-        if label != axis(n - 1 - r, k, "S", "W") or len(row) != n or row.strip(RAMP):
-            raise web.Refusal("bad_header", f"row {r}")
-        for x, ch in enumerate(row):
-            cells["".join(CELL[c, w] for c, w in zip(cols[x], label))] = ch
-    return cells
-
-
 def read_fasta(path):
     try:
         lines = Path(path).read_bytes().decode("ascii").splitlines()
@@ -404,10 +290,6 @@ def main(argv=None):
     s = sub.add_parser("stats", help="print length, sequence root, GC and longest run")
     s.add_argument("fasta")
     s.add_argument("--salt", help="32-byte hex salt; prints the Bases root sha256(salt || bases)")
-    c = sub.add_parser("cgr", help="draw the frequency chaos-game image of a sequence")
-    c.add_argument("fasta")
-    c.add_argument("out")
-    c.add_argument("--k", type=int, default=6)
     p = sub.add_parser("pool", help="split a dna1 FASTA record into 117-nt pool1 oligos")
     p.add_argument("fasta")
     p.add_argument("out")
@@ -416,10 +298,6 @@ def main(argv=None):
     u.add_argument("reads")
     u.add_argument("out")
     u.add_argument("--file", type=int, default=0)
-    g = sub.add_parser("glyph", help="print the cgr1 text chaos-game glyph of a sequence")
-    g.add_argument("fasta")
-    g.add_argument("--k", type=int, default=3)
-    g.add_argument("--out", help="write here instead of stdout")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "encipher":
@@ -450,13 +328,6 @@ def main(argv=None):
                     raise web.Refusal("bad_salt", f"{len(salt)} bytes, a Bases salt is 32")
                 line += f" bases {seq_root(seq, salt)}"
             print(line)
-        elif a.cmd == "cgr":
-            if not 1 <= a.k <= 10:
-                raise web.Refusal("bad_header", "k must be 1-10")
-            img = fcgr(read_fasta(a.fasta), a.k)
-            if Path(a.out).exists():
-                raise web.Refusal("exists", a.out)
-            web.write_png(a.out, img)
         elif a.cmd == "pool":
             seq = read_fasta(a.fasta)
             oligos = pool(seq, a.file)
@@ -471,15 +342,6 @@ def main(argv=None):
                 raise web.Refusal("exists", a.out)
             write_fasta(a.out, seq, f"dna1 nt={len(seq)} from pool1 file={a.file}")
             print(seq_root(seq), len(seq), f"used {used} dropped {dropped}")
-        elif a.cmd == "glyph":
-            text = glyph(read_fasta(a.fasta), a.k)
-            if a.out:
-                if Path(a.out).exists():
-                    raise web.Refusal("exists", a.out)
-                with open(a.out, "x", encoding="ascii") as f:
-                    f.write(text)
-            else:
-                sys.stdout.write(text)
     except web.Refusal as err:
         print(err, file=sys.stderr)
         return 1
