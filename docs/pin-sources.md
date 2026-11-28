@@ -21,6 +21,7 @@ Every external input is pinned by a stable URL and a sha256. Sources without a l
 ## Graph
 
 - ← [follow-agent-contract.md](follow-agent-contract.md)
+- ← [recall-klines.md](recall-klines.md)
 - → [../skills/encode-media.md](../skills/encode-media.md)
 
 ## Theory

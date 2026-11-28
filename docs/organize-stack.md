@@ -22,6 +22,7 @@ The wetware repositories are layers over a single primitive: a DNA sequence, one
 
 - ← [follow-agent-contract.md](follow-agent-contract.md)
 - → [pin-sources.md](pin-sources.md)
+- → [recall-klines.md](recall-klines.md)
 - → [../systems/commit-web.md](../systems/commit-web.md)
 
 ## Hierarchy

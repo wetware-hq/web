@@ -21,6 +21,7 @@ web stores static media as a shallow neural network: the weights of a 2-hidden-l
 ## Graph
 
 - → [follow-agent-contract.md](follow-agent-contract.md)
+- → [recall-klines.md](recall-klines.md)
 
 ## Route
 
@@ -41,6 +42,7 @@ Read `DISCLAIMER` before any node. Then take the first row that covers the task 
 | Read a sequence's k-mer profile as text | contract §11 → `ref/dna.py glyph` |
 | Reason about a sequence in pictures, run an experiment, or check a print receipt | contract §12 → `ref/loop.py` |
 | Place a repository in the stack, or cross a repository boundary | `docs/organize-stack.md` → contract §13 |
+| Start a new object, layer or repository in the stack | `docs/recall-klines.md` → `docs/organize-stack.md` |
 | Traverse without reading prose | `ooc/web.og` |
 | Anything else, or a conflict | `docs/follow-agent-contract.md` |
 
@@ -57,6 +59,7 @@ flowchart LR
     X --> S[commit-web]
     C --> V[vary-cybernetics]
     C --> M[organize-stack]
+    M --> K[recall-klines]
 ```
 
 ## Licence

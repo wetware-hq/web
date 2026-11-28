@@ -1,15 +1,15 @@
 ::meta
 title: web route and file index
-version: 5
-updated: 2026-11-27
+version: 6
+updated: 2026-11-28
 domain: web|shallow-nn|universal-approximator|media|on-chain|dna-primitive|stack|tensor-map
 scope: all
 governs: docs/follow-agent-contract.md
-checksum: sha256:8dd8791a6261994b168cce141cb581a02fc89824717504d812e2cf64d9e18c96
+checksum: sha256:f73457b9af04e821b2f200bf554bf42b4c13be1b683e6ff1ee2851732500f8a0
 ::end
 
 ::schema
-node-types: [stage, skill, system, web, primitive, map, assertion, meta]
+node-types: [stage, skill, system, web, primitive, map, memory, assertion, meta]
 edge-types: [requires, precedes, encodes, refuses]
 scope-levels: [all, encoder, decoder, committer]
 ::end
@@ -31,6 +31,7 @@ pool1 | system | all | 1.00 | oligo-pool, 117nt, 4x-overlap, index-parity, revco
 cgr1 | system | all | 1.00 | text-glyph, qr-finder-corners, iupac-axes, counts-root, D12-D13
 loop1 | system | all | 1.00 | pseudovisual-cot, think, hypothesis, act, observe, diff, hash-chain, print-receipt, D14-D16
 tmap1 | system | all | 1.00 | tensor-map, .tmap, tensorflow-DataType, TensorProto, tensor-root, exact-or-view, T1-T4
+klines | memory | all | 1.00 | k-line, minsky-1980, replicated, refuse-never-guess, computed-verdict, exact-or-view, one-root-rule, replay-normative, machine-is-data, pin-never-vendor, finalized-block, specbase-shape, K1-K9
 stop | assertion | all | 1.00 | rendered, checked, sufficient
 ::end
 
@@ -267,6 +268,19 @@ Load docs/organize-stack.md. Only roots cross upward; only sequence files hold b
 ::end
 ::end
 
+::node [id=klines type=memory confidence=1.00 scope=all updated=2026-11-28]
+::dense
+K1=refuse-never-guess|K2=verdict-computed|K3=exact-or-view|K4=one-root-rule|K5=replay-normative|K6=machine-is-data|K7=pin-never-vendor|K8=finalized-block|K9=specbase-shape
+::end
+::full
+Load docs/recall-klines.md. A line is listed only when two or more independent chains reached it; a handle, never an authority.
+::end
+::edges
+->[:requires] docs/recall-klines.md
+->[:requires] stack
+::end
+::end
+
 ::node [id=stop type=assertion confidence=1.00 scope=all updated=2026-11-26]
 ::dense
 render-written|check-passed|halt
@@ -280,5 +294,6 @@ v2=dna1-cipher|cgr|astronaut-64-dna
 v3=loop1-pseudovisual-cot|astronaut-64-loop
 v4=dna-primitive|stack-map|S1-S6
 v5=tmap1-tensor-maps|tensorflow-DataType|S7|T1-T4
+v6=k-line-register|replicated-moves|K1-K9
 ::end
 ::end

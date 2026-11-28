@@ -111,6 +111,7 @@ python ref/dna.py glyph samples/astronaut-64.fa --k 3         # text CGR
 | [`dna.md`](dna.md) | The `.dna` sequence form: the stack primitive, its alphabet, root and axioms. |
 | [`tensor.md`](tensor.md) | The `.tmap` tensor map: every stack object as named TensorFlow tensors. |
 | [`docs/organize-stack.md`](docs/organize-stack.md) | Where each wetware repository sits over the primitive, and the value each boundary carries. |
+| [`docs/recall-klines.md`](docs/recall-klines.md) | The K-lines: the moves that worked in more than one chain of thought, and what to reactivate for each. |
 | [`docs/read-repository.md`](docs/read-repository.md) | Where to start: which file to read for which task. |
 | [`docs/follow-agent-contract.md`](docs/follow-agent-contract.md) | The rulebook: bytes, decoder, root, error codes and checks. It wins if files disagree. |
 | [`docs/pin-sources.md`](docs/pin-sources.md) | The theorems, papers and sample image, each pinned. |
