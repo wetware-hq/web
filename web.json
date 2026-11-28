@@ -91,18 +91,18 @@
     "format": "kline1",
     "reference": "ref/compose.py",
     "spec": "docs/follow-agent-contract.md §17",
-    "task": { "target": "rint(source . BT.601), uint8 grid + (1,)", "utility": "PSNR §6 to 2 decimals" },
+    "task": { "target": "(299 R + 587 G + 114 B) / 1000, integer, half to even; uint8 grid + (1,)", "utility": "PSNR §6 to 2 decimals" },
     "stages": [
       { "path": "samples/luma.web", "root": "6f963ddcef912d0ca9523c93c4f3d86abc3b855ec9433486eaf8e6872775d200", "grid": [256, 256, 256], "d": 1, "fit": "hand-set, §16" },
       { "path": "samples/astronaut-64.curve.web", "root": "eec19158632ab15a380c0700a8099b410dbe466c0eb29bd779b19a0bb8b811e7", "bytes": 656, "grid": [256], "d": 1, "hidden": 16, "omega0": 30, "fit": "ref/compose.py fit_curve: the mean luma at each level of samples/astronaut-64.luma.deep, 3000 steps, seed 0" }
     ],
     "uses": [
       { "input": "samples/astronaut-64.web", "media": "samples/astronaut-64.png", "target": "0fa0f11970eca872d6391f95c6914866663b065a624289b28b1a0fed0dc9d9a3" },
-      { "input": "samples/coffee-64.web", "media": "samples/coffee-64.png", "target": "2738d641604ecf6bf368cbda16789199aaa28cfeb2b9369601534ac575764954" }
+      { "input": "samples/coffee-64.web", "media": "samples/coffee-64.png", "target": "1dfe4063855108dded3f47a440ae51ba5d8753e33a8859479527fbb6338f7104" }
     ],
     "kline": [
-      { "name": "luma", "path": "samples/luma.kline", "sha256": "14bce20701067b0689f0dc5223a16de3eb54c496186714f97b78263cd6efbbbc", "stages": ["samples/luma.web"], "head": "f76e899af7b38e51a51d838cac9905b029393b3c5a06361d6e102282bb5dee77", "utility": [[null, 32.47], [null, 34.93]], "recalled": true },
-      { "name": "astronaut-64-luma-curve", "path": "samples/astronaut-64.luma-curve.kline", "sha256": "3101eb5102cb23a23aad4966c7f77990a6921a9c86ec9e356a9477c245cdd726", "stages": ["samples/luma.web", "samples/astronaut-64.curve.web"], "head": "01175d62843fed541b785a2dc9f4212e84145f115e3033f99f0d10c95a740701", "utility": [[null, 32.47, 32.55], [null, 34.93, 34.42]], "recalled": false }
+      { "name": "luma", "path": "samples/luma.kline", "sha256": "4c9b88cd5dde3ed25f34da3a139900237c3fe42aeb5b379ec11e93440e87c0d9", "stages": ["samples/luma.web"], "head": "f76e899af7b38e51a51d838cac9905b029393b3c5a06361d6e102282bb5dee77", "utility": [[null, 32.47], [null, 34.93]], "recalled": true },
+      { "name": "astronaut-64-luma-curve", "path": "samples/astronaut-64.luma-curve.kline", "sha256": "527b8d2603785299c3fcba6a54450d790f565452941088770bb5b5fca8641266", "stages": ["samples/luma.web", "samples/astronaut-64.curve.web"], "head": "01175d62843fed541b785a2dc9f4212e84145f115e3033f99f0d10c95a740701", "utility": [[null, 32.47, 32.55], [null, 34.93, 34.42]], "recalled": false }
     ]
   },
   "tensors": {
@@ -115,8 +115,8 @@
       { "kind": "pool", "of": "samples/astronaut-64.pool.fa", "file": 0, "root": "5a2d633556bf08d255e16552d4e9a03aa0b3af2a85762b0d0b09ecca23825ffc", "bytes": 234271, "exact": true },
       { "kind": "loop", "of": "samples/astronaut-64.loop.txt", "root": "14fcc796a9925baccc2771a403bd91dc5d89f794ff20ea27fb191a7f2b082d1e", "bytes": 457, "exact": false },
       { "kind": "deep", "of": "samples/astronaut-64.luma.deep", "root": "d2fa03a2b5c2f5659dfc66354c731ef7c4f7e1bfa4d3f37114002bc0c889aacb", "bytes": 282, "exact": false },
-      { "kind": "kline", "of": "samples/luma.kline", "root": "1fd9e26620dcffa90e1201b70c6bfdd50b193d2e574228b8fd6a64bd4fc0cb8b", "bytes": 321, "exact": false },
-      { "kind": "kline", "of": "samples/astronaut-64.luma-curve.kline", "root": "d1dcc08b2b41b21dad604f1e1dc2b141ea06d493d3bf36e8d220d2134f67b0d7", "bytes": 385, "exact": false }
+      { "kind": "kline", "of": "samples/luma.kline", "root": "21ac8d0c56493dc190129eb319af36c01c85e3a882714790409b09447bed648c", "bytes": 321, "exact": false },
+      { "kind": "kline", "of": "samples/astronaut-64.luma-curve.kline", "root": "3a294e12d7a6b26c82e86b96da740c678996155814b5351294d41ba14c176134", "bytes": 385, "exact": false }
     ]
   },
   "tune": {

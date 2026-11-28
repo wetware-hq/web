@@ -143,9 +143,9 @@ class Edges(unittest.TestCase):
         self.assertEqual(compose.grow(inputs, t[:32], library=[LUMA]), ([], [("start", None)]))
 
     def test_luma_is_integer_half_even(self):
-        px = np.array([[[1, 0, 0]]], np.uint8)  # 0.299 -> 0
-        self.assertEqual(compose.luma_target(px)[0, 0, 0], 0)
-        # 299*2 + 587*0 + 114*... : find exact .5 cases by construction: 500/1000 with q even/odd
+        self.assertEqual(compose.luma_target(np.array([[[1, 0, 0]]], np.uint8))[0, 0, 0], 0)  # 0.299 -> 0
+        self.assertEqual(compose.luma_target(np.array([[[1, 123, 0]]], np.uint8))[0, 0, 0], 72)  # 72.5 -> 72
+        self.assertEqual(compose.luma_target(np.array([[[1, 123, 0], [0, 0, 0]]], np.uint8))[0, 0, 0], 72)
         self.assertEqual(compose.luma_target(np.array([[[0, 0, 0]]], np.uint8))[0, 0, 0], 0)
         self.assertEqual(compose.luma_target(np.array([[[255, 255, 255]]], np.uint8))[0, 0, 0], 255)
 
