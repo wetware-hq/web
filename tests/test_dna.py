@@ -33,16 +33,6 @@ class Samples(unittest.TestCase):
             self.assertEqual(dna.longest_run(seq), 1)  # D3
             self.assertEqual(round(dna.gc(seq), 4), s["gc"])
 
-    def test_pinned_cgr(self):
-        for s in PINS["dna"]:
-            c = s["cgr"]
-            seq = dna.read_fasta(path(s["path"]))
-            png = Path(path(c["path"])).read_bytes()
-            self.assertEqual(hashlib.sha256(png).hexdigest(), c["sha256"])
-            img = dna.fcgr(seq, c["k"])
-            self.assertTrue(np.array_equal(web.read_png(path(c["path"])), img))
-            self.assertTrue(np.array_equal(img > 0, dna.allowed(c["k"]) > 0))  # D5
-
 
 class Cipher(unittest.TestCase):
     def setUp(self):
@@ -123,7 +113,6 @@ class Cipher(unittest.TestCase):
                     dna.read_fasta(p)
                 self.assertEqual(ctx.exception.code, code)
                 self.assertEqual(dna.main(["stats", p]), 1)
-                self.assertEqual(dna.main(["cgr", p, os.path.join(d, "c.png")]), 1)
 
     def test_cli(self):
         with tempfile.TemporaryDirectory() as d:
@@ -137,16 +126,7 @@ class Cipher(unittest.TestCase):
             self.assertEqual(dna.main(["stats", fa, "--salt", "00" * 32]), 0)
             self.assertEqual(dna.main(["stats", fa, "--salt", "00" * 31]), 1)
             self.assertEqual(dna.main(["stats", fa, "--salt", "zz"]), 1)
-            self.assertEqual(dna.main(["cgr", fa, os.path.join(d, "c.png"), "--k", "11"]), 1)
-            self.assertEqual(dna.main(["cgr", fa, w]), 1)
             self.assertEqual(Path(w).read_bytes(), self.blob)
-
-
-class Cgr(unittest.TestCase):
-    def test_rare_kmer_is_present(self):
-        img = dna.fcgr("AC" * 600 + "G", 1)
-        self.assertEqual(int((img > 0).sum()), 3)
-        self.assertEqual(int(img.max()), 255)
 
 
 class Pool(unittest.TestCase):
@@ -277,40 +257,6 @@ class Pool(unittest.TestCase):
             Path(p).write_bytes(b"\n".join(raw))
             reads = dna.read_pool(p)
             self.assertEqual(dna.unpool(reads)[1:], (len(self.oligos) - 1, 1))
-
-
-class Glyph(unittest.TestCase):
-    def test_pinned_glyph(self):  # D12
-        for s in PINS["dna"]:
-            g = s["glyph"]
-            text = Path(path(g["path"])).read_text("ascii")
-            seq = dna.read_fasta(path(s["path"]))
-            self.assertEqual(dna.glyph(seq, g["k"]), text)
-            self.assertIn(f"%counts sha256:{g['counts']}", text)
-
-    def test_labels_spell_cells(self):  # D13
-        rng = np.random.default_rng(5)
-        seq = "".join(dna.BASES[i] for i in rng.integers(0, 4, 400)) + "AAAA"
-        for k in range(1, 5):
-            cells = dna.read_glyph(dna.glyph(seq, k))
-            self.assertEqual(len(cells), 4**k)
-            for kmer, ch in cells.items():
-                n = sum(seq.startswith(kmer, i) for i in range(len(seq)))
-                self.assertEqual(ch == " ", n == 0, kmer)
-
-    def test_dna1_is_homopolymer_free(self):
-        cells = dna.read_glyph(dna.glyph(dna.read_fasta(path("samples/astronaut-64.fa")), 3))
-        for kmer, ch in cells.items():
-            self.assertEqual(ch == " ", dna.longest_run(kmer) > 1, kmer)
-
-    def test_refusals(self):
-        text = dna.glyph("ACGTTGCA", 2)
-        for bad in ("", text.replace("C----G", "G----C"), text.replace("SS |", "WW |", 1), text.replace("%cgr1 k=2", "%cgr1 k=x")):
-            with self.assertRaises(web.Refusal) as ctx:
-                dna.read_glyph(bad)
-            self.assertEqual(ctx.exception.code, "bad_header")
-        with self.assertRaises(web.Refusal):
-            dna.glyph("ACGT", 7)
 
 
 class Bases(unittest.TestCase):

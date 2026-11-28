@@ -26,3 +26,4 @@ output  = "weights --fileformat .web { binary16 LE, root = sha256(bytes) }"
 5. **Weights as tensor.** A file is a fixed-length weight vector, so a deep net can read it directly. Any reader must allow for hidden-unit permutation (contract §7).
 6. **Chain-ready, not chained.** The 32-byte root fits a `bytes32` and the bytes fit calldata ([`systems/commit-web.md`](systems/commit-web.md)). No contract is deployed (`web.json` `chain` is `null`).
 7. **DNA form.** The `dna1` cipher writes a file as one `ACGT` sequence with no repeated base and reads it back byte for byte (contract §9). `pool1` splits it into indexed 117-nt oligos that survive loss, either strand and outvoted substitutions (§10).
+8. **Depth by composition.** A deep net is an ordered list of webs, each reading the levels of the one before on a grid of 256 per channel, and the stages and interfaces are hash-chained to one head (contract §16). There is no deeper file format.

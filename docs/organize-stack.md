@@ -31,9 +31,10 @@ The wetware repositories are layers over a single primitive: a DNA sequence, one
 wetware-hq
   tesseract   .tess  build plan        parts  ──┐          (compiles a sequence into synthesizable parts)
   web         .web   shallow network     │      │
+              deep1  deep net, composed  │      │          deep1 §16
               .dna   sequence  ◀─────────┘      │          (the primitive; this repository defines it)
                      oligos  arr<oligo>         │          pool1 §10
-                     glyph, loop                │          cgr1 §11, loop1 §12
+                     loop                       │          loop1 §12
   bases       token  chromosome, ERC-721  ◀─────┘          (chain root + length, the web3 coin)
   helix       page   dna:<token id>                        (the wiki commit; reads the token, never the sequence)
 ```
@@ -44,7 +45,7 @@ wetware-hq
 | shallow network | `web` | `.web` weights, 2 hidden layers of sine units | **web root** `sha256(bytes)` (§4) | `web`, exact |
 | **sequence** | `web` | one `ACGT` record, the primitive | **sequence root** `sha256(ascii(seq))` (§9) | `sequence`, exact |
 | oligo pool | `web` | `arr<oligo>`, 117-nt indexed oligos | `sha256` of the pool file, plus the sequence root it rebuilds (§10) | `pool`, exact |
-| glyph | `web` | `cgr1` k-mer picture, text | **counts root** `sha256` of the counts (§11) | `glyph`, view |
+| deep net | `web` | `deep1` record, webs composed stage by stage | **deep head**, the chain over stage web roots and interface roots (§16) | `deep`, view |
 | loop | `web` | `loop1` pseudovisual chain of thought | **head**, the frame hash chain (§12) | `loop`, view |
 | build plan | `tesseract` | `.tess`, a tree of parts for one target | **plan root** `sha256` of the canonical plan bytes; its target is a sequence root | `plan` (tesseract) |
 | chromosome token | `bases` | one ERC-721, 1 base … n bases | **chain root** `sha256(salt \|\| ascii(seq))` and the length in bases; print `receipt` is a loop head | `token` (bases) |
@@ -58,9 +59,9 @@ The normative statement is `docs/follow-agent-contract.md` §13. In short:
 
 - **One primitive (S1).** Anything the stack calls DNA is a sequence as `dna.md` defines it. `dna1`, `pool1` oligos and a `tesseract` target or part are the same object under extra constraints, never a different dialect.
 - **One root rule (S2).** A sequence root is `sha256(ascii(seq))`, and a chain root is `sha256(salt || ascii(seq))` with a 32-byte salt. Nothing else hashes a sequence. Bases `root` and helix `sequence-root` are chain roots; a tesseract target and a loop header carry sequence roots. They meet only through a token id, and only a salt holder can show the two roots name one sequence.
-- **No crossed names (S3).** A web root, a sequence root, a counts root, a loop head, a plan root and a locus root name different objects. One is never accepted where another is required.
-- **Bases stay in sequence files (S4).** The chain stores a root and a length. A helix page stores claims about a chromosome. A glyph, a diff and a loop store counts and hashes. None of them stores a base.
-- **Two-way or a view (S5).** `web ↔ dna1` and `sequence ↔ pool1` are exact both ways. `media → web` is a measured approximation, and `sequence → glyph/loop` is a view regenerated on demand. A view is never read back as data: web refuses it by §1, helix by `reverse_flow`.
+- **No crossed names (S3).** A web root, a sequence root, a deep head, a loop head, a plan root and a locus root name different objects. One is never accepted where another is required.
+- **Bases stay in sequence files (S4).** The chain stores a root and a length. A helix page stores claims about a chromosome. A view, a diff, a loop and a deep record store levels, counts and hashes. None of them stores a base.
+- **Two-way or a view (S5).** `web ↔ dna1` and `sequence ↔ pool1` are exact both ways. `media → web` is a measured approximation, and `sequence → loop` and `webs → deep record` are views regenerated on demand. A view is never read back as data: web refuses it by §1, helix by `reverse_flow`.
 - **Refuse, never guess (S6).** Every conversion in the stack returns a sequence the data determines, or a stable refusal code.
 - **One tensor map (S7).** Every object above has exactly one `tmap1` tensor map ([`tensor.md`](../tensor.md), §14): named tensors with TensorFlow `DataType`s, named by a **tensor root**. The repository that owns the object defines its map; it is how any layer hands its object to a network. The map's kind is in its bytes, so a tensor root is never taken for another name (S3), and only `sequence` and `pool` maps hold bases (S4).
 
@@ -73,7 +74,7 @@ flowchart LR
     S -->|dna1| W
     S -->|pool1| O["arr&lt;oligo&gt;"]
     O -->|unpool| S
-    S -.->|view| G[cgr1 glyph]
+    W -->|deep1| D[deep net]
     S -.->|view| L[loop1]
     S -->|tess1| P[.tess plan]
     P -->|assemble| S
@@ -89,7 +90,7 @@ Solid edges carry bases or a commitment to them; dotted edges are views. Up the 
 | Repository | What this repository may rely on | How it is held |
 |---|---|---|
 | [`wetware-hq/bases`](https://github.com/wetware-hq/bases) | the token model: commit-reveal mint, `polymerize` print chain, `tokenURI` to helix | cited; `web.json` `chain` is `null`, so nothing is committed |
-| [`wetware-hq/helix`](https://github.com/wetware-hq/helix) | `dna:` pages, the `printed` and `glyph` predicates | cited; helix pins web, not the other way round |
+| [`wetware-hq/helix`](https://github.com/wetware-hq/helix) | `dna:` pages, the `printed` predicate | cited; helix pins web, not the other way round |
 | [`wetware-hq/tesseract`](https://github.com/wetware-hq/tesseract) | compiling a sequence into synthesizable parts | cited; tesseract pins web by commit |
 
 A neighbour is pinned and cited, never vendored (`docs/pin-sources.md`). web is the lowest layer that holds a sequence, so it depends on no neighbour at run time: the rows above are what the other layers rely on here.
@@ -97,7 +98,7 @@ A neighbour is pinned and cited, never vendored (`docs/pin-sources.md`). web is 
 ## Falsification
 
 - Two files in the stack hash one sequence two different ways.
-- A token, a page, a glyph or a loop is found holding bases.
+- A token, a page or a loop is found holding bases.
 - A value named as one root is accepted where another root is required.
 - `python ref/dna.py decipher samples/astronaut-64.fa out.web` does not reproduce `samples/astronaut-64.web`.
 

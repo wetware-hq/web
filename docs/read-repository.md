@@ -39,7 +39,7 @@ Read `DISCLAIMER` before any node. Then take the first row that covers the task 
 | Understand the link to biological neurons | `docs/vary-cybernetics.md` |
 | Write a web as DNA, or read one back | contract §9 → `ref/dna.py` |
 | Split a sequence into oligos, or rebuild it from reads | contract §10 → `ref/dna.py pool`/`unpool` |
-| Read a sequence's k-mer profile as text | contract §11 → `ref/dna.py glyph` |
+| Build a deep net from webs, or check one | contract §16 → `ref/deep.py` |
 | Reason about a sequence in pictures, run an experiment, or check a print receipt | contract §12 → `ref/loop.py` |
 | Place a repository in the stack, or cross a repository boundary | `docs/organize-stack.md` → contract §13 |
 | Start a new object, layer or repository in the stack | `docs/recall-klines.md` → `docs/organize-stack.md` |

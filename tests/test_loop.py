@@ -61,14 +61,14 @@ class Loop(unittest.TestCase):
         refuses(self, "bad_head", loop.verify, bad, self.seq)
         refuses(self, "mismatch", loop.verify, rehead(bad), self.seq)
         lines = self.text.split("\n")
-        i = next(n for n, line in enumerate(lines) if line.startswith("SWS |"))
+        i = next(n for n, line in enumerate(lines) if line.startswith("|") and "#" in line)
         lines[i] = lines[i].replace("#", "@", 1)
         refuses(self, "mismatch", loop.verify, rehead("\n".join(lines)), self.seq)
-        refuses(self, "bad_head", loop.verify, self.text.replace("%head a", "%head b"), self.seq)
+        refuses(self, "bad_head", loop.verify, self.text.replace("%head 2", "%head 3"), self.seq)
         refuses(self, "bad_loop", loop.verify, rehead(self.text.replace("%frame 2 ", "%frame 3 ")), self.seq)
 
     def test_verdict_is_computed(self):  # D16
-        plan = [{"hypothesis": {"expect": "refused:tie", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "0"}}]
+        plan = [{"hypothesis": {"expect": "refused:tie", "size": 1}, "act": {"op": "lose", "file": 0, "oligos": "0"}}]
         text = loop.run(self.seq, plan)
         self.assertIn("outcome=refused:gap verdict=refutes", text)
         self.assertEqual(loop.verify(text, self.seq), [(2, "refutes")])
@@ -86,7 +86,7 @@ class Loop(unittest.TestCase):
             base = Path(d)
             (base / "reads.fa").write_text("".join(f">r{i}\n{r}\n" for i, r in enumerate(reads)))
             h = hashlib.sha256((base / "reads.fa").read_bytes()).hexdigest()
-            plan = [{"hypothesis": {"expect": "intact", "k": 2}, "act": {"op": "reads", "file": 0, "sha256": h, "path": "reads.fa"}}]
+            plan = [{"hypothesis": {"expect": "intact", "size": 2}, "act": {"op": "reads", "file": 0, "sha256": h, "path": "reads.fa"}}]
             text = loop.run(self.seq, plan, base)
             self.assertEqual(loop.verify(text, self.seq, base), [(2, "supports")])
             (base / "reads.fa").write_text(">r0\nACGT\n")
@@ -96,20 +96,21 @@ class Loop(unittest.TestCase):
 
     def test_bad_plans(self):
         for step in (
-            {"think": {"view": "cgr", "k": 7}},
+            {"think": {"view": "cgr", "k": 3}},
+            {"hypothesis": {"expect": "intact", "size": 65}, "act": {"op": "lose", "file": 0, "oligos": "1"}},
             {"think": {"view": "web", "size": 0}},
-            {"hypothesis": {"expect": "maybe", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "0"}},
-            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "3,1"}},
-            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 9, "oligos": "1"}},
-            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "burn", "file": 0}},
-            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "-1"}},
-            {"hypothesis": {"expect": "refused:gapp", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "0"}},
-            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "reads", "file": 0, "sha256": "0" * 64, "path": "a b.fa"}},
-            {"think": {"view": "cgr", "k": 2}, "hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "lose", "file": 0, "oligos": "1"}},
-            {"hypothesis": {"expect": "intact", "k": 1}},
+            {"hypothesis": {"expect": "maybe", "size": 1}, "act": {"op": "lose", "file": 0, "oligos": "0"}},
+            {"hypothesis": {"expect": "intact", "size": 1}, "act": {"op": "lose", "file": 0, "oligos": "3,1"}},
+            {"hypothesis": {"expect": "intact", "size": 1}, "act": {"op": "lose", "file": 9, "oligos": "1"}},
+            {"hypothesis": {"expect": "intact", "size": 1}, "act": {"op": "burn", "file": 0}},
+            {"hypothesis": {"expect": "intact", "size": 1}, "act": {"op": "lose", "file": 0, "oligos": "-1"}},
+            {"hypothesis": {"expect": "refused:gapp", "size": 1}, "act": {"op": "lose", "file": 0, "oligos": "0"}},
+            {"hypothesis": {"expect": "intact", "size": 1}, "act": {"op": "reads", "file": 0, "sha256": "0" * 64, "path": "a b.fa"}},
+            {"think": {"view": "web", "size": 2}, "hypothesis": {"expect": "intact", "size": 1}, "act": {"op": "lose", "file": 0, "oligos": "1"}},
+            {"hypothesis": {"expect": "intact", "size": 1}},
             {},
             {"think": None},
-            {"hypothesis": {"expect": "intact", "k": 1}, "act": {"op": "reads", "file": 0, "path": "astronaut-64.pool.fa"}},
+            {"hypothesis": {"expect": "intact", "size": 1}, "act": {"op": "reads", "file": 0, "path": "astronaut-64.pool.fa"}},
         ):
             with self.subTest(step=step), self.assertRaises(web.Refusal):
                 loop.run(self.seq, [step])
@@ -127,13 +128,28 @@ class Loop(unittest.TestCase):
                 refuses(self, "bad_loop", loop.verify, rehead(text.replace(f"%frame {n} {kind}", f"%frame 9{n} {kind}", 1)), self.seq)
 
     def test_unused_view_params_are_dropped(self):
-        text = loop.run(self.seq, [{"think": {"view": "cgr", "k": 2, "size": "1 2"}}])
-        self.assertIn("%frame 0 think view=cgr k=2\n", text)
+        text = loop.run(self.seq, [{"think": {"view": "web", "size": 2, "k": "1 2"}}])
+        self.assertIn("%frame 0 think view=web size=2\n", text)
         self.assertEqual(loop.verify(text, self.seq), [])
 
-    def test_every_unpool_refusal_can_be_predicted(self):
-        for code in ("gap", "tie", "homopolymer", "bad_pool"):
+    def test_every_readback_refusal_can_be_predicted(self):
+        for code in ("gap", "tie", "homopolymer", "bad_pool", "bad_word", "bad_magic", "bad_header", "bad_weight"):
             self.assertEqual(loop.expected({"expect": "refused:" + code}), "refused:" + code)
+
+    def test_changed_web_is_drawn_and_diffed(self):
+        w = web.unpack(path("samples/astronaut-64.web").read_bytes())
+        other = web.pack(w["grid"], w["d_out"], w["hidden"], w["omega0"], w["params"][:5] + [w["params"][5] + 0.25])
+        reads = dna.pool(dna.encipher(other), 0)
+        with tempfile.TemporaryDirectory() as d:
+            base = Path(d)
+            (base / "reads.fa").write_text("".join(f">r{i}\n{r}\n" for i, r in enumerate(reads)))
+            h = hashlib.sha256((base / "reads.fa").read_bytes()).hexdigest()
+            plan = [{"hypothesis": {"expect": "intact", "size": 4}, "act": {"op": "reads", "file": 0, "sha256": h, "path": "reads.fa"}}]
+            text = loop.run(self.seq, plan, base)
+            self.assertIn(f"outcome=changed sequence={dna.seq_root(dna.encipher(other))} web={web.root(other)}", text)
+            self.assertIn("%diff size=4 changed=", text)
+            self.assertNotIn("-", text.split("%diff")[1].split("\n", 3)[3].strip("+-\n|"))
+            self.assertEqual(loop.verify(text, self.seq, base), [(2, "refutes")])
 
     def test_view_is_text(self):
         v = loop.view(path("samples/astronaut-64.web").read_bytes(), 8)

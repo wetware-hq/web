@@ -20,11 +20,12 @@ import web  # noqa: E402
 
 TAG = b"loop1"
 VIEW_RAMP = " .:-=+*#%@"  # web view: space = darkest, "@" = brightest
-DIFF = {"same": "=", "more": "+", "fewer": "-", "appeared": "!", "vanished": "?"}
+DIFF = {"same": "=", "brighter": "+", "darker": "-"}
 OPS = {"lose": ("file", "oligos"), "damage": ("file", "seed", "drop", "sub", "flip"), "reads": ("file", "sha256", "path")}
-VIEWS = {"web": ("size",), "cgr": ("k",)}
+VIEWS = {"web": ("size",)}
 PER = 1000  # damage rates are per mille
-UNPOOL_CODES = ("gap", "tie", "homopolymer", "bad_pool")  # unvoting can join two equal bases
+READBACK_CODES = ("gap", "tie", "homopolymer", "bad_pool", "bad_length", "bad_word", "too_large") + (
+    "bad_magic", "bad_header", "truncated", "trailing_bytes", "bad_weight")  # unpool, then decipher
 
 
 def chain(blocks):
@@ -55,8 +56,8 @@ def num(f, key, lo, hi):
 # --- views -----------------------------------------------------------------------------------
 
 
-def view(blob, size):
-    """The web's render as a size x size text grid: block-mean luminance on a 10-step ramp."""
+def cells(blob, size):
+    """The web's render as size x size block-mean luminance levels, 0-255."""
     img = web.decode(blob).astype(np.int64)
     rows, cols = img.shape[:2]
     if not 1 <= size <= min(rows, cols, 64):
@@ -64,30 +65,29 @@ def view(blob, size):
     lum = img.sum(2) // img.shape[2]
     rb = [r * rows // size for r in range(size + 1)]
     cb = [c * cols // size for c in range(size + 1)]
-    levels = [[int(lum[rb[r] : rb[r + 1], cb[c] : cb[c + 1]].sum() // ((rb[r + 1] - rb[r]) * (cb[c + 1] - cb[c]))) for c in range(size)] for r in range(size)]
-    lines = [f"%view1 size={size} grid={rows}x{cols} web={web.root(blob)}", f'%ramp "{VIEW_RAMP}"', "+" + "-" * size + "+"]
-    lines += ["|" + "".join(VIEW_RAMP[v * len(VIEW_RAMP) // 256] for v in row) + "|" for row in levels]
-    lines.append("+" + "-" * size + "+")
+    return [[int(lum[rb[r] : rb[r + 1], cb[c] : cb[c + 1]].sum() // ((rb[r + 1] - rb[r]) * (cb[c + 1] - cb[c]))) for c in range(size)] for r in range(size)]
+
+
+def frame(rows):
+    return ["+" + "-" * len(rows[0]) + "+"] + ["|" + r + "|" for r in rows] + ["+" + "-" * len(rows[0]) + "+"]
+
+
+def view(blob, size):
+    """view1: the web's render as a size x size text grid on a 10-step ramp, dark to bright."""
+    levels = cells(blob, size)
+    rows, cols = web.unpack(blob)["grid"][:2]
+    lines = [f"%view1 size={size} grid={rows}x{cols} web={web.root(blob)}", f'%ramp "{VIEW_RAMP}"']
+    lines += frame(["".join(VIEW_RAMP[v * len(VIEW_RAMP) // 256] for v in row) for row in levels])
     lines.append("%levels sha256:" + hashlib.sha256(" ".join(str(v) for row in levels for v in row).encode("ascii")).hexdigest())
     return lines
 
 
-def diff(expected, observed, k):
-    """Cell by cell, what the observed k-mer counts did against the expected ones, on the cgr1 frame."""
-    a, b = dna.kmer_counts(expected, k), dna.kmer_counts(observed, k)
-
-    def cell(x, y):
-        if x == y:
-            return " " if x == 0 else DIFF["same"]
-        if x == 0:
-            return DIFF["appeared"]
-        if y == 0:
-            return DIFF["vanished"]
-        return DIFF["more"] if y > x else DIFF["fewer"]
-
-    rows = ["".join(cell(int(x), int(y)) for x, y in zip(ra, rb)) for ra, rb in zip(a, b)]
-    changed = int((a != b).sum())
-    return [f"%diff k={k} changed={changed}/{a.size}", f'%key "{"".join(DIFF.values())}" same more fewer appeared vanished'] + dna.grid(k, rows)
+def diff(expected, observed, size):
+    """Cell by cell, whether the read-back web's view is the same, brighter or darker than the data's."""
+    a, b = cells(expected, size), cells(observed, size)
+    rows = ["".join(DIFF["same"] if y == x else DIFF["brighter"] if y > x else DIFF["darker"] for x, y in zip(ra, rb)) for ra, rb in zip(a, b)]
+    changed = sum(x != y for ra, rb in zip(a, b) for x, y in zip(ra, rb))
+    return [f"%diff size={size} changed={changed}/{size * size}", f'%key "{"".join(DIFF.values())}" same brighter darker'] + frame(rows)
 
 
 # --- experiments -----------------------------------------------------------------------------
@@ -115,7 +115,7 @@ def damage(oligos, seed, drop, sub, flip):
 
 
 def run_act(seq, f, base):
-    """One act -> ("sequence", seq, used, dropped) or ("refused", code). Every op ends in unpool."""
+    """One act -> ("web", seq, used, dropped, blob) or ("refused", code). Every op ends in unpool, then decipher."""
     op = f.get("op")
     file_id = num(f, "file", 0, 3**dna.FILE_TRITS - 1)
     if op == "lose":
@@ -146,44 +146,42 @@ def run_act(seq, f, base):
         raise web.Refusal("bad_loop", f"op {op!r}")
     try:
         got, used, dropped = dna.unpool(reads, file_id)
+        return ("web", got, used, dropped, dna.decipher(got))
     except web.Refusal as err:
         return ("refused", err.code)
-    return ("sequence", got, used, dropped)
 
 
 # --- frames ----------------------------------------------------------------------------------
 
 
-def think(seq, blob, f):
+def think(blob, f):
     if f.get("view") == "web":
         return view(blob, num(f, "size", 1, 64))
-    if f.get("view") == "cgr":
-        return dna.glyph(seq, num(f, "k", 1, 6)).splitlines()
     raise web.Refusal("bad_loop", f"view {f.get('view')!r}")
 
 
 def expected(f):
     e = f.get("expect", "")
-    if e == "intact" or e in {"refused:" + code for code in UNPOOL_CODES}:
+    if e == "intact" or e in {"refused:" + code for code in READBACK_CODES}:
         return e
     raise web.Refusal("bad_loop", f"expect {e!r}")
 
 
-def hypothesis(seq, f):
-    k = num(f, "k", 1, 6)
-    return dna.glyph(seq, k).splitlines() if expected(f) == "intact" else []
+def hypothesis(blob, f):
+    size = num(f, "size", 1, 64)
+    return view(blob, size) if expected(f) == "intact" else []
 
 
-def observe(seq, hyp, outcome):
+def observe(seq, blob, hyp, outcome):
     """The observe frame for an outcome, against the hypothesis it tests."""
-    k, expect = num(hyp, "k", 1, 6), expected(hyp)
+    size, expect = num(hyp, "size", 1, 64), expected(hyp)
     if outcome[0] == "refused":
         got, body = "refused:" + outcome[1], []
         head = f"outcome={got}"
     else:
         got = "intact" if outcome[1] == seq else "changed"
-        head = f"outcome={got} sequence={dna.seq_root(outcome[1])} used={outcome[2]} dropped={outcome[3]}"
-        body = dna.glyph(outcome[1], k).splitlines() + diff(seq, outcome[1], k)
+        head = f"outcome={got} sequence={dna.seq_root(outcome[1])} web={web.root(outcome[4])} used={outcome[2]} dropped={outcome[3]}"
+        body = view(outcome[4], size) + diff(blob, outcome[4], size)
     return f"{head} verdict={'supports' if got == expect else 'refutes'}", body
 
 
@@ -209,16 +207,16 @@ def run(seq, plan, base=Path(".")):
         if "think" in step:
             t = {k: str(v) for k, v in step["think"].items()}
             p = {"view": t.get("view", ""), **{key: t[key] for key in VIEWS.get(t.get("view"), ()) if key in t}}
-            blocks.append(block(i, "think", params(p), think(seq, blob, p)))
+            blocks.append(block(i, "think", params(p), think(blob, p)))
             continue
         h = {k: str(v) for k, v in step["hypothesis"].items()}
-        h = {key: h[key] for key in ("expect", "k") if key in h}
+        h = {key: h[key] for key in ("expect", "size") if key in h}
         a = {k: str(v) for k, v in step["act"].items()}
         op = a.get("op", "")
         a = {"op": op, **{key: a[key] for key in OPS.get(op, ()) if key in a}}
-        blocks.append(block(i, "hypothesis", params(h), hypothesis(seq, h)))
+        blocks.append(block(i, "hypothesis", params(h), hypothesis(blob, h)))
         blocks.append(block(i + 1, "act", params(a), []))
-        line, body = observe(seq, h, run_act(seq, a, base))
+        line, body = observe(seq, blob, h, run_act(seq, a, base))
         blocks.append(block(i + 2, "observe", line, body))
     return "".join(blocks) + f"%head {chain(blocks)}\n"
 

@@ -67,7 +67,7 @@ This file is the stack's K-line register. A line is listed only when the same mo
 
 **Line.** Either the map inverts to the same bytes and a test pins the round trip, or it is labelled a view and is never read back as data. There is no third class.
 
-**Chains.** `web ↔ dna1` and `sequence ↔ pool1` invert, while a `cgr1` glyph is a view (web #2); `compose(plan)` must return the target byte for byte or refuse (tesseract #1); a `tmap1` map is exact for a web, a sequence and a pool, a view for a glyph and a loop (web #6, `tensor.md` 5).
+**Chains.** `web ↔ dna1` and `sequence ↔ pool1` invert, while a `loop1` file is a view (web #3); `compose(plan)` must return the target byte for byte or refuse (tesseract #1); a `tmap1` map is exact for a web, a sequence and a pool, a view for a loop (web #6, `tensor.md` 5).
 
 **Falsification.** A view is decoded back into data, or a claimed inverse is not covered by a round-trip test.
 

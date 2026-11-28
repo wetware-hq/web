@@ -6,6 +6,7 @@
   "primitive": "dna.md",
   "stack": "docs/organize-stack.md",
   "tensor": "tensor.md",
+  "deep": "ref/deep.py",
   "spec": "docs/follow-agent-contract.md",
   "reference": "ref/web.py",
   "chain": null,
@@ -44,17 +45,28 @@
       "sequence": "f0bf1df99ce04f92436ecac58ac9378f8e56e9428f6f1aae453ec479c11103c1",
       "gc": 0.5009,
       "longest_run": 1,
-      "cgr": {
-        "path": "samples/astronaut-64.cgr.png",
-        "k": 6,
-        "sha256": "147b85a9376f3001c814e9c15beecaa844dde7ef1255139409dc4c6f912cf5bd",
-        "web": { "path": "samples/astronaut-64.cgr.web", "root": "a625eef4b23e7223c2e5478ae4390d48fb3a67fb61c0530ec97feb0d54ff78b5", "bytes": 8850, "psnr": 36.36 }
-      },
       "pool": { "cipher": "pool1", "path": "samples/astronaut-64.pool.fa", "file": 0, "oligos": 2002, "oligo_nt": 117, "nt": 234234, "sha256": "2262ca0409fb1bfdc0c9efbf4ec79c89955984edbf4ef60641d417c14c0badea", "gc": [0.3846, 0.6068], "longest_run": 1 },
-      "glyph": { "format": "cgr1", "path": "samples/astronaut-64.cgr3.txt", "k": 3, "counts": "685a51199776fb3be09e79b8ab0981067d8e6a5f09b47d99ffb1f6f6cad84bc8" },
-      "loop": { "format": "loop1", "reference": "ref/loop.py", "plan": "samples/astronaut-64.loop.json", "path": "samples/astronaut-64.loop.txt", "sha256": "5dea5f6e291e2d34d88007a433c55d127eb9abd90e165dcc9b317da93e66cfe5", "head": "a8958ddcdd641039cfcc43e7b1f8bd7543d71d1a785bb10b4b6f6f07ab8e2232", "verdicts": { "6": "refutes", "9": "supports", "12": "supports" } }
+      "loop": { "format": "loop1", "reference": "ref/loop.py", "plan": "samples/astronaut-64.loop.json", "path": "samples/astronaut-64.loop.txt", "sha256": "a0f50a9b60d22541a5476daf4363f73396d80860537af7e414a95f64e157ce4e", "head": "2606931c86fbb0f54ba31e2b2f130130fd588b8f75bf6daa8f20ed8442189bcd", "verdicts": { "3": "refutes", "6": "supports", "9": "supports" } }
     }
   ],
+  "composition": {
+    "format": "deep1",
+    "reference": "ref/deep.py",
+    "spec": "docs/follow-agent-contract.md §16",
+    "deep": [
+      {
+        "name": "astronaut-64-luma",
+        "path": "samples/astronaut-64.luma.deep",
+        "sha256": "1f4d2db174d08d83579bf900cd3f1762dd6d31c68c93b3452f28c52e99fd6bb7",
+        "stages": [
+          { "path": "samples/astronaut-64.web", "root": "3add10e021a62cdaabe4ea71fc077d45543ff5f6d91e8ab2a664cc9a79dd0d89", "grid": [64, 64], "d": 3 },
+          { "path": "samples/luma.web", "root": "6f963ddcef912d0ca9523c93c4f3d86abc3b855ec9433486eaf8e6872775d200", "bytes": 34, "grid": [256, 256, 256], "d": 1, "hidden": 1, "omega0": 1, "fit": "hand-set, not fitted: ref/deep.py luma (BT.601 0.299, 0.587, 0.114; eps 1/64)" }
+        ],
+        "head": "712d7583d9b84f8d53e9e1776456747f277b734323ad2a68cc1f5c4b20ed114c",
+        "fidelity": { "against": "rint(samples/astronaut-64.png . BT.601)", "psnr": 32.47 }
+      }
+    ]
+  },
   "tensors": {
     "format": "tmap1",
     "reference": "ref/tensor.py",
@@ -63,8 +75,8 @@
       { "kind": "web", "of": "samples/astronaut-64.web", "path": "samples/astronaut-64.web.tmap", "root": "84fc45b63f7c5c110e8945950f2030a4b89d0d1f57e010d889ddd8f347d42166", "bytes": 9211, "exact": true },
       { "kind": "sequence", "of": "samples/astronaut-64.fa", "root": "b86758eda7a4ca4ecbc7eebc22be274d2e182a1d9ee82e626aa7cd6a7c493ebb", "bytes": 50133, "exact": true },
       { "kind": "pool", "of": "samples/astronaut-64.pool.fa", "file": 0, "root": "5a2d633556bf08d255e16552d4e9a03aa0b3af2a85762b0d0b09ecca23825ffc", "bytes": 234271, "exact": true },
-      { "kind": "glyph", "of": "samples/astronaut-64.fa", "k": 3, "root": "80a507805931b55f0a173685d94f79d9969191f40b8becf8b4f555167973201f", "bytes": 547, "exact": false },
-      { "kind": "loop", "of": "samples/astronaut-64.loop.txt", "root": "d9c01a77a2049e195a431309daf67ebce0184007f7f73dcfabef990b3934b2e2", "bytes": 559, "exact": false }
+      { "kind": "loop", "of": "samples/astronaut-64.loop.txt", "root": "14fcc796a9925baccc2771a403bd91dc5d89f794ff20ea27fb191a7f2b082d1e", "bytes": 457, "exact": false },
+      { "kind": "deep", "of": "samples/astronaut-64.luma.deep", "root": "d2fa03a2b5c2f5659dfc66354c731ef7c4f7e1bfa4d3f37114002bc0c889aacb", "bytes": 282, "exact": false }
     ]
   },
   "tune": {

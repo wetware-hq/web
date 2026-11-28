@@ -24,7 +24,7 @@ This note records why a web is shaped the way it is for a future coupling with l
 
 ## Reading
 
-- **Deep nets.** A web is a fixed-shape tensor (contract §7), so a deep network reads it directly, with no pixel decoder in between.
+- **Deep nets.** A web is a fixed-shape tensor (contract §7), so a deep network reads it directly, with no pixel decoder in between. A deep net can also be built from webs: stages composed by induction, each interface hash-chained (contract §16).
 - **Neurons.** A web is a map from a position in a stimulus to a response at that position, so its form is a receptive-field map. Each first-layer unit is a sinusoid over the image plane with its own orientation, frequency and phase (from `W1` and `b1`). Hypothesis: that basis is a natural code to drive a stimulating electrode array, and to read one back.
 - **Feedback.** Encoding is the closed loop: render, compare with the source, adjust the weights, repeat until fidelity stops improving. A neural interface would close the same loop with a recorded response in place of the render.
 

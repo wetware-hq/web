@@ -1,9 +1,6 @@
 [
   {"think": {"view": "web", "size": 16}},
-  {"think": {"view": "cgr", "k": 1}},
-  {"think": {"view": "cgr", "k": 2}},
-  {"think": {"view": "cgr", "k": 3}},
-  {"hypothesis": {"expect": "intact", "k": 3}, "act": {"op": "damage", "file": 0, "seed": 0, "drop": 20, "sub": 1, "flip": 500}},
-  {"hypothesis": {"expect": "intact", "k": 3}, "act": {"op": "damage", "file": 0, "seed": 0, "drop": 20, "sub": 0, "flip": 500}},
-  {"hypothesis": {"expect": "refused:gap", "k": 3}, "act": {"op": "lose", "file": 0, "oligos": "0"}}
+  {"hypothesis": {"expect": "intact", "size": 16}, "act": {"op": "damage", "file": 0, "seed": 0, "drop": 20, "sub": 1, "flip": 500}},
+  {"hypothesis": {"expect": "intact", "size": 16}, "act": {"op": "damage", "file": 0, "seed": 0, "drop": 20, "sub": 0, "flip": 500}},
+  {"hypothesis": {"expect": "refused:gap", "size": 16}, "act": {"op": "lose", "file": 0, "oligos": "0"}}
 ]

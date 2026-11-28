@@ -1,6 +1,6 @@
 # web
 
-**Images stored as tiny neural networks, so deep nets can read them and blockchains can hold them.**
+**Images stored as tiny neural networks, so deep nets can read them, be built from them, and blockchains can hold them.**
 
 > web is academic research material. A web is a lossy approximation of its source, not a copy, a proof of authorship or a licence to it. (Full text: [`DISCLAIMER`](DISCLAIMER).)
 
@@ -25,7 +25,7 @@ python ref/web.py decode samples/astronaut-64.web out.png                    # r
 python ref/web.py encode samples/astronaut-64.png my.web                     # fit a new web (~70 s)
 python ref/dna.py encipher samples/astronaut-64.web my.fa                     # web -> synthetic DNA
 python ref/dna.py decipher samples/astronaut-64.fa  back.web                 # DNA -> the same web bytes
-python ref/dna.py cgr      samples/astronaut-64.fa  cgr.png                  # chaos-game image of the DNA
+python ref/deep.py verify samples/astronaut-64.luma.deep samples/astronaut-64.web samples/luma.web   # a deep net of two webs
 python -m unittest discover -s tests
 ```
 
@@ -51,15 +51,16 @@ Across the wetware stack, DNA means one thing: a single sequence over `ACGT`, na
 | shallow network (`.web`) | web | web root |
 | sequence (`.dna`), the primitive | web | sequence root |
 | `arr<oligo>` (`pool1`) | web | pool digest |
-| CGR (`cgr1`, `loop1`) | web | counts root, loop head |
+| deep net (`deep1`) | web | deep head |
+| chain of thought (`loop1`) | web | loop head |
 | build plan (`.tess`) | [tesseract](https://github.com/wetware-hq/tesseract) | plan root |
 | any object above, as tensors (`.tmap`) | web ([`tensor.md`](tensor.md)) | tensor root |
 | web3 coin (chromosome token) | [bases](https://github.com/wetware-hq/bases) | chain root (salted) and length |
 | wiki commit (`dna:` page) | [helix](https://github.com/wetware-hq/helix) | locus root |
 
-Only sequence files hold bases. A token, a page, a glyph and a loop hold roots and counts, so a chromosome can be held, printed and cited by agents that never see its sequence. `tests/test_stack.py` checks this repository against those rules.
+Only sequence files hold bases. A token, a page and a loop hold roots and counts, so a chromosome can be held, printed and cited by agents that never see its sequence. `tests/test_stack.py` checks this repository against those rules.
 
-The universal middle layer is the tensor: every object in the table maps to exactly one set of named TensorFlow tensors ([`tensor.md`](tensor.md), contract §14, [`ref/tensor.py`](ref/tensor.py)). The web, the sequence and the pool maps invert exactly; the glyph and the loop maps are views.
+The universal middle layer is the tensor: every object in the table maps to exactly one set of named TensorFlow tensors ([`tensor.md`](tensor.md), contract §14, [`ref/tensor.py`](ref/tensor.py)). The web, the sequence and the pool maps invert exactly; the loop and the deep maps are views.
 
 ```sh
 python ref/tensor.py map  web samples/astronaut-64.web out.tmap   # = samples/astronaut-64.web.tmap
@@ -79,15 +80,13 @@ python ref/tune.py merge samples/astronaut-64.web samples/astronaut-64.r8.adapte
 
 The `dna1` cipher ([`ref/dna.py`](ref/dna.py), contract §9) writes a web as one DNA sequence and reads it back to the exact same bytes. Each 2 bytes become 11 bases, and no base ever repeats, so the sequence has no homopolymers. The sample web becomes a 50,105-base sequence ([`samples/astronaut-64.fa`](samples/astronaut-64.fa)) with 50.1% GC.
 
-Going the other way, a chaos-game representation turns the sequence into an image ([`samples/astronaut-64.cgr.png`](samples/astronaut-64.cgr.png)). That image can be fitted as a web too ([`samples/astronaut-64.cgr.web`](samples/astronaut-64.cgr.web), PSNR 36.36 dB). This is a storage form, not compression.
+This is a storage form, not compression.
 
 The `pool1` layer (contract §10) splits that sequence into 2,002 oligos of 117 bases each, after Goldman et al. 2013 ([`samples/astronaut-64.pool.fa`](samples/astronaut-64.pool.fa)). Each oligo carries its own index and a parity check, and each base is in up to 4 oligos. The sequence comes back from reads in any order, from either strand, after some oligos are lost, and after substitutions that the other copies outvote. If the reads do not settle a base, `unpool` refuses with `gap` or `tie` rather than guess.
 
-The `cgr1` glyph (contract §11) prints the chaos-game grid as plain text an agent can read, with labelled corners and axes and a hash of the counts, like the finder patterns and check value on a QR code ([`samples/astronaut-64.cgr3.txt`](samples/astronaut-64.cgr3.txt)).
-
 ## Thinking in pictures: `loop1`
 
-A `loop1` file (contract §12, [`ref/loop.py`](ref/loop.py)) is a chain of thought about a sequence in which every step is a text picture an agent can read, not prose. It **thinks** by viewing the data (the web's image as a 16 × 16 character grid, then `cgr1` glyphs at k = 1, 2, 3), states a **hypothesis** as the picture it expects to see or the refusal it expects, **acts** with one replayable experiment on the oligo pool, and **observes** the result with a diff grid. The verdict is computed, and the frames are hash-chained, so the 32-byte head names the whole loop and can be a `Bases` print receipt.
+A `loop1` file (contract §12, [`ref/loop.py`](ref/loop.py)) is a chain of thought about a sequence in which every step is a text picture an agent can read, not prose. It **thinks** by viewing the data (the web's image as a 16 × 16 character grid), states a **hypothesis** as the picture it expects to see or the refusal it expects, **acts** with one replayable experiment on the oligo pool, and **observes** the web read back from it, as the same grid and a diff grid. The verdict is computed, and the frames are hash-chained, so the 32-byte head names the whole loop and can be a `Bases` print receipt.
 
 The sample loop ([`samples/astronaut-64.loop.txt`](samples/astronaut-64.loop.txt)) found a real limit of `pool1`: 0.1% substitutions already cause a `tie` where only two oligos cover a base, while 2% oligo loss alone is survivable.
 
@@ -99,7 +98,19 @@ python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt 
 ```sh
 python ref/dna.py pool samples/astronaut-64.fa pool.fa        # 117-nt oligos
 python ref/dna.py unpool pool.fa seq.fa                       # back to the sequence, by majority vote
-python ref/dna.py glyph samples/astronaut-64.fa --k 3         # text CGR
+```
+
+## Deep nets from shallow webs: `deep1`
+
+A deep net is built by induction (contract §16, [`ref/deep.py`](ref/deep.py)). One web is a deep net of one stage. A deep net of n + 1 stages feeds the colour levels of the first n stages into one more web, which reads them as positions on its own grid of 256 levels per channel. Every stage is an ordinary web, so composing needs only the normal decoder.
+
+The interfaces are bound in a hash chain. Each stage contributes its web root and the root of the levels it wrote, and the chain ends in a 32-byte head that fits on chain. Each link is the kind of claim a [ZKML](https://ddkang.github.io/papers/2024/zkml-eurosys.pdf) proof certifies (this committed model turned this input into this output). Here, replaying the composition is what checks it.
+
+The sample ([`samples/astronaut-64.luma.deep`](samples/astronaut-64.luma.deep)) composes the astronaut web with a 34-byte, hand-set stage ([`samples/luma.web`](samples/luma.web)) that turns RGB into luma. The two-stage net renders the astronaut in grey at 32.47 dB against the luma of the source.
+
+```sh
+python ref/deep.py run    my.deep samples/astronaut-64.web samples/luma.web     # compose; prints the head
+python ref/deep.py decode gray.png samples/astronaut-64.web samples/luma.web    # render the last stage
 ```
 
 ## What is in this repository
@@ -120,7 +131,8 @@ python ref/dna.py glyph samples/astronaut-64.fa --k 3         # text CGR
 | [`skills/decode-web.md`](skills/decode-web.md) | Rebuilding an image and checking a web. |
 | [`systems/commit-web.md`](systems/commit-web.md) | Putting a web on chain and reading it back. |
 | [`ref/web.py`](ref/web.py) | The reference encoder and decoder (Python + numpy). |
-| [`ref/dna.py`](ref/dna.py) | The `dna1` cipher: web ↔ synthetic DNA, plus chaos-game images. |
+| [`ref/dna.py`](ref/dna.py) | The `dna1` cipher and `pool1` oligos: web ↔ synthetic DNA. |
+| [`ref/deep.py`](ref/deep.py) | The `deep1` composition: shallow webs into a deep net, interfaces hash-chained. |
 | [`ref/loop.py`](ref/loop.py) | The `loop1` pseudovisual chain of thought: think, hypothesize, act, observe. |
 | [`web.json`](web.json) | Pins for the sample: source hash, web root, size and PSNR, and its DNA sequence. |
 | [`ooc/web.og`](ooc/web.og) | A compact map of the files, for agents that traverse links. |
