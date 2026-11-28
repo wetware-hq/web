@@ -40,11 +40,15 @@ def rises(after, before):
 
 
 def luma_target(media):
-    """The BT.601 luma of a uint8 RGB array, rounded half to even: the sample task's target, shape grid + (1,)."""
+    """The BT.601 luma of a uint8 RGB array, (299 R + 587 G + 114 B) / 1000 rounded half to even in integers,
+    so every machine gets the same target: the sample task's target, shape grid + (1,)."""
     media = np.asarray(media, np.uint8)
     if media.ndim != 3 or media.shape[-1] != 3:
         raise web.Refusal("shape_mismatch", f"luma needs an RGB image, not {media.shape}")
-    return np.clip(np.rint(media.astype(np.float64) @ np.array(deep.LUMA)), 0, 255).astype(np.uint8)[..., None]
+    n = media.astype(np.int64) @ np.array([299, 587, 114], np.int64)
+    q, r = np.divmod(n, 1000)
+    q += (r > 500) | ((r == 500) & (q % 2 == 1))
+    return q.astype(np.uint8)[..., None]
 
 
 def curve_table(levels, target):
