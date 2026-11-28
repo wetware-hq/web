@@ -21,7 +21,7 @@ TAG = b"deep1"
 LEVELS = 256  # an interface is uint8 levels, so a later stage's grid is 256 per axis
 AXIS = np.linspace(-1.0, 1.0, LEVELS)  # the §3 axis of size 256: level l sits at AXIS[l]
 MAX_STAGES = 64
-HEADER = re.compile(r"%deep1 stages=(0|[1-9][0-9]*) grid=([1-9][0-9]*(?:x[1-9][0-9]*){0,2})")
+HEADER = re.compile(r"%deep1 stages=(0|[1-9][0-9]?) grid=([1-9][0-9]*(?:x[1-9][0-9]*){0,2})")
 STAGE = re.compile(r"%stage (0|[1-9][0-9]*) web=([0-9a-f]{64}) d=([13]) out=([0-9a-f]{64})")
 HEAD = re.compile(r"%head [0-9a-f]{64}")
 LUMA = (0.299, 0.587, 0.114)  # ITU-R BT.601, the sample's second stage

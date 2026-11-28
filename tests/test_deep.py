@@ -102,6 +102,7 @@ class Compose(unittest.TestCase):
         refuses(self, "bad_deep", deep.verify, text.replace("%stage 1", "%stage 2"), [self.web, self.luma])
         refuses(self, "bad_deep", deep.head, text[:-1])
         refuses(self, "bad_deep", deep.head, "%deep1 stages=x\n%head 0\n")
+        refuses(self, "bad_deep", deep.head, "%deep1 stages=" + "9" * 5000 + " grid=2x2\n%head 0\n")
         lines = text.split("\n")
         lines[0] = "%deep1 stages=2 grid=64x63"
         refuses(self, "mismatch", deep.verify, "\n".join(lines), [self.web, self.luma])
