@@ -94,12 +94,15 @@ class Compose(unittest.TestCase):
         text = deep.record([self.web, self.luma])
         o = deep.parse(text)[1][1][2]
         refuses(self, "bad_head", deep.verify, text.replace(o, "0" * 64), [self.web, self.luma])
-        refuses(self, "bad_head", deep.head, text.replace(o, "z" * 64))
+        refuses(self, "bad_deep", deep.head, text.replace(o, "z" * 64))
+        refuses(self, "bad_deep", deep.head, text.replace(" d=1 ", " d=4 "))
+        refuses(self, "bad_deep", deep.head, text.replace(" grid=64x64", ""))
         refuses(self, "root_mismatch", deep.verify, text, [self.web, negate()])
         refuses(self, "bad_stage", deep.verify, text, [self.web])
         refuses(self, "bad_deep", deep.verify, text.replace("%stage 1", "%stage 2"), [self.web, self.luma])
         refuses(self, "bad_deep", deep.head, text[:-1])
         refuses(self, "bad_deep", deep.head, "%deep1 stages=x\n%head 0\n")
+        refuses(self, "bad_deep", deep.head, "%deep1 stages=" + "9" * 5000 + " grid=2x2\n%head 0\n")
         lines = text.split("\n")
         lines[0] = "%deep1 stages=2 grid=64x63"
         refuses(self, "mismatch", deep.verify, "\n".join(lines), [self.web, self.luma])

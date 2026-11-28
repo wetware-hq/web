@@ -21,6 +21,9 @@ TAG = b"deep1"
 LEVELS = 256  # an interface is uint8 levels, so a later stage's grid is 256 per axis
 AXIS = np.linspace(-1.0, 1.0, LEVELS)  # the §3 axis of size 256: level l sits at AXIS[l]
 MAX_STAGES = 64
+HEADER = re.compile(r"%deep1 stages=(0|[1-9][0-9]?) grid=([1-9][0-9]*(?:x[1-9][0-9]*){0,2})")
+STAGE = re.compile(r"%stage (0|[1-9][0-9]*) web=([0-9a-f]{64}) d=([13]) out=([0-9a-f]{64})")
+HEAD = re.compile(r"%head [0-9a-f]{64}")
 LUMA = (0.299, 0.587, 0.114)  # ITU-R BT.601, the sample's second stage
 LUMA_EPS = 1 / 64  # sin(sin(eps z)) / eps is z to within z^3 eps^2 / 3
 
@@ -83,28 +86,23 @@ def parse(text):
     if not text.endswith("\n") or "\r" in text:
         raise web.Refusal("bad_deep", "lines must end with LF")
     lines = text[:-1].split("\n")
-    try:
-        head, n = lines[0], int(lines[0].split()[1].removeprefix("stages="))
-    except (IndexError, ValueError):
-        raise web.Refusal("bad_deep", "not a deep1 file") from None
-    if not head.startswith("%deep1 stages=") or not 1 <= n <= MAX_STAGES or len(lines) != n + 2 or not lines[-1].startswith("%head "):
+    m = HEADER.fullmatch(lines[0])
+    if not m or not 1 <= int(m[1]) <= MAX_STAGES or len(lines) != int(m[1]) + 2 or not HEAD.fullmatch(lines[-1]):
         raise web.Refusal("bad_deep", "header, stage count or head line")
     ls = []
     for i, ln in enumerate(lines[1:-1]):
-        parts = ln.split()
-        f = dict(p.split("=", 1) for p in parts[2:] if "=" in p)
-        if parts[:2] != ["%stage", str(i)] or list(f) != ["web", "d", "out"] or len(parts) != 5:
+        f = STAGE.fullmatch(ln)
+        if not f or f[1] != str(i):
             raise web.Refusal("bad_deep", f"stage line {i}")
-        ls.append((f["web"], f["d"], f["out"]))
-    return head, ls, lines[-1][6:]
+        ls.append((f[2], f[3], f[4]))
+    return lines[0], ls, lines[-1][6:]
 
 
 def head(text):
     """The head, after checking it is the chain of the stage lines (no webs needed)."""
     _, ls, h = parse(text)
-    hexes = all(re.fullmatch(r"[0-9a-f]{64}", v) for w, _, o in ls for v in (w, o))
-    want = chain([(w, o) for w, _, o in ls])[-1] if hexes else None
-    if want is None or h != want:
+    want = chain([(w, o) for w, _, o in ls])[-1]
+    if h != want:
         raise web.Refusal("bad_head", f"head is {want}")
     return h
 
