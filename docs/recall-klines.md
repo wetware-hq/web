@@ -36,10 +36,10 @@ This file is the stack's K-line register. A line is listed only when the same mo
 | K3 | Exact both ways, or declared a view | contract §9–§10, §14, tesseract `compose` | web #2, web #6, tesseract #1 |
 | K4 | One root rule per object, no crossed names | §13 S2–S3, `dna.md`, `tensor.md` 4 | web #5, helix #5, tesseract #1 |
 | K5 | Replay is the rule; frames chain to a head | contract §12, bases `receipt`, popper traces, `reason.md` 2 | web #3, bases #3, popper #1, tesseract #3 |
-| K6 | The machine is data | `tesseract.json` `machines`, `research.json` host limits | tesseract #1, popper #1 |
-| K7 | Pin a neighbour, never vendor it | `docs/pin-sources.md` in each repository | tesseract #1, popper #1, tulip #1 |
+| K6 | The machine is data | `tesseract.json` `machines`, `research.json` testbed and charter | tesseract #1, popper #1 |
+| K7 | Pin a neighbour, never vendor it | `docs/pin-sources.md` in each repository | tesseract #1, popper #1, #7, tulip #1 |
 | K8 | Read the chain at a finalized block | helix `docs/pin-references.md`, bases `solana/chain.ts` | helix #4, bases #4 |
-| K9 | A specbase is five files, not a program | this repository's own shape | web #1, helix #1, tesseract #1, popper #1, tulip #1 |
+| K9 | A specbase has a fixed file shape | this repository's own shape | web #1, helix #1, tesseract #1, popper #1, tulip #1 |
 
 ### K1 — Refuse, never guess
 
@@ -97,7 +97,7 @@ This file is the stack's K-line register. A line is listed only when the same mo
 
 **Line.** Put every limit in the repository's JSON as one knob per limit, and none that is not a limit. The code reads them. A machine that does not exist yet can then be priced today, and the same target compiles shallower as the limit moves.
 
-**Chains.** `tesseract.json` `machines` carries floor, ceiling, pool width, GC and homopolymer limits and enzymes, and the tree collapses to one part at a 50 kb ceiling (tesseract #1, §3); `research.json` carries the testbed, data split, decision rule, host limits and charter defaults, so a night is set by data and the Lean rule is checked before any run (popper #1).
+**Chains.** `tesseract.json` `machines` carries floor, ceiling, pool width, GC and homopolymer limits and enzymes, and the tree collapses to one part at a 50 kb ceiling (tesseract #1, §3); `research.json` carries the testbed, data split, decision rule and charter defaults, so a night is set by data, not by code (popper #1).
 
 **Falsification.** A limit hard-coded in a reference implementation, or a knob that stands for nothing physical.
 
@@ -107,7 +107,7 @@ This file is the stack's K-line register. A line is listed only when the same mo
 
 **Line.** Cite it by a stable identifier — a commit plus a file `sha256`, or a DOI — and copy nothing. Licence incompatibility then never propagates, and a neighbour's change is visible as a pin that no longer matches.
 
-**Chains.** `RomeroLab/omega` is GPL-3 and pinned by commit and file hashes, with `omega1` written deliberately simpler (tesseract #1); karpathy/autoresearch and Cello primitives are restated and pinned, never copied (popper #1); digital-oulipo is pinned by commit and `sha256` with the texts used structure-only (tulip #1).
+**Chains.** `RomeroLab/omega` is GPL-3 and pinned by commit and file hashes, with `omega1` written deliberately simpler (tesseract #1); karpathy/autoresearch is pinned by commit (popper #1) and Cello's primitives are restated and pinned, never copied (popper #7); digital-oulipo is pinned by commit and `sha256` with the texts used structure-only (tulip #1).
 
 **Falsification.** A file in the stack that is a copy of an unpinned or incompatibly licensed source.
 
@@ -121,15 +121,15 @@ This file is the stack's K-line register. A line is listed only when the same mo
 
 **Falsification.** A pinned chain value at a block above the finalized head.
 
-### K9 — A specbase is five files, not a program
+### K9 — A specbase has a fixed file shape
 
 **Trigger.** A new object or a new layer has to be specified.
 
-**Line.** Ship one fileformat page with its `media_type`, extension, magic and axioms; one contract section that governs on conflict; one stdlib-shaped reference implementation; one JSON of pinned samples with their digests; and one `.og` index whose `checksum` covers the file with its `checksum:` line removed. Skills and systems hang off those, each with a Graph section that is reciprocated by every file it links to. Prose is never the authority.
+**Line.** Ship a `DISCLAIMER` read first; a router, `docs/read-repository.md`, that sends each task down the smallest sufficient path; one contract under `docs/` that governs on any conflict; a pins page under `docs/` and one root JSON of pinned sources and samples with their digests; `skills/` and `systems/` that hang off the contract; and one `ooc/<repo>.og` index whose `checksum` covers the file with its `checksum:` line removed. Every file carries a Graph section that each file it links to reciprocates. A reference implementation, where there is one, sits under `ref/` and is subordinate to the contract. Prose is never the authority.
 
-**Chains.** web (#1), helix (#1), tesseract (#1), popper (#1) and tulip (#1) were each built to this shape by different chains, and later work in each repository extended the same five slots rather than inventing a sixth.
+**Chains.** web (#1), helix (#1), tesseract (#1), popper (#1) and tulip (#1) were each built to this shape by different chains, and later work in each repository filled the same slots rather than adding new ones. Only web and tesseract have a `ref/`; helix, popper and tulip are specification only.
 
-**Falsification.** A specification whose rules live only in prose, or an `.og` whose checksum does not cover its body.
+**Falsification.** A specification whose rules live only in prose, a Graph link that is not reciprocated, or an `.og` whose checksum does not cover its body.
 
 ## Use
 
