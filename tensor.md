@@ -13,7 +13,7 @@ spec       = "docs/follow-agent-contract.md"
 reference  = "ref/tensor.py"
 
 [pipeline]
-input   = "object --one layer's stored object { .web, .dna, pool1, loop1, deep1; .tess, token, order, board in their repositories }"
+input   = "object --one layer's stored object { .web, .dna, pool1, loop1, deep1, kline1; .tess, token, order, board in their repositories }"
 process = "map { one kind, named tensors in ascending name order, each a TensorProto: DataType, shape, tensor_content }"
 output  = "tensors --fileformat .tmap { root = sha256(bytes), cited tmap1:<root> }"
 ```

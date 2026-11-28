@@ -52,6 +52,7 @@ Across the wetware stack, DNA means one thing: a single sequence over `ACGT`, na
 | sequence (`.dna`), the primitive | web | sequence root |
 | `arr<oligo>` (`pool1`) | web | pool digest |
 | deep net (`deep1`) | web | deep head |
+| K-line (`kline1`) | web | K-line head |
 | chain of thought (`loop1`) | web | loop head |
 | build plan (`.tess`) | [tesseract](https://github.com/wetware-hq/tesseract) | plan root |
 | any object above, as tensors (`.tmap`) | web ([`tensor.md`](tensor.md)) | tensor root |
@@ -113,6 +114,18 @@ python ref/deep.py run    my.deep samples/astronaut-64.web samples/luma.web     
 python ref/deep.py decode gray.png samples/astronaut-64.web samples/luma.web    # render the last stage
 ```
 
+## Compositions as K-lines: `kline1`
+
+A K-line is a composition function over shallow webs (contract §17, [`ref/compose.py`](ref/compose.py)): a list of stages that extends any deep net whose last interface it reads. `grow` builds a deep net by induction. At each step it tries every recalled K-line, every library stage, and a stage fitted to the current interface, and keeps the best one only if the deep net's utility (PSNR against a target) rises. A K-line is recalled only after it raised utility at every stage on two different targets.
+
+On the sample task (the BT.601 luma of a picture), [`samples/luma.kline`](samples/luma.kline) raises both the astronaut and the coffee and is recalled. The astronaut's fitted curve ([`samples/astronaut-64.curve.web`](samples/astronaut-64.curve.web)) lifts the astronaut from 32.47 to 32.55 dB but drops the coffee from 34.93 to 34.42 dB, so [`samples/astronaut-64.luma-curve.kline`](samples/astronaut-64.luma-curve.kline) is not recalled.
+
+```sh
+python ref/compose.py grow samples/coffee-64.png samples/coffee-64.web --recall samples/luma.kline samples/luma.web
+python ref/compose.py verify samples/luma.kline --stages samples/luma.web \
+  --use samples/astronaut-64.png samples/astronaut-64.web --use samples/coffee-64.png samples/coffee-64.web
+```
+
 ## What is in this repository
 
 | Path | What it covers |
@@ -133,6 +146,7 @@ python ref/deep.py decode gray.png samples/astronaut-64.web samples/luma.web    
 | [`ref/web.py`](ref/web.py) | The reference encoder and decoder (Python + numpy). |
 | [`ref/dna.py`](ref/dna.py) | The `dna1` cipher and `pool1` oligos: web ↔ synthetic DNA. |
 | [`ref/deep.py`](ref/deep.py) | The `deep1` composition: shallow webs into a deep net, interfaces hash-chained. |
+| [`ref/compose.py`](ref/compose.py) | The `kline1` K-lines: compositions recalled once they worked twice, deep nets grown by induction. |
 | [`ref/loop.py`](ref/loop.py) | The `loop1` pseudovisual chain of thought: think, hypothesize, act, observe. |
 | [`web.json`](web.json) | Pins for the sample: source hash, web root, size and PSNR, and its DNA sequence. |
 | [`ooc/web.og`](ooc/web.og) | A compact map of the files, for agents that traverse links. |

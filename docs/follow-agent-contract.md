@@ -14,7 +14,7 @@ A **web** is one piece of static media stored as the weights of a shallow neural
   "reads": ["DISCLAIMER", "web.json", "ooc/web.og"],
   "writes": [],
   "must": ["one canonical byte form", "decode is the only normative direction", "never rewrite a committed web", "match codes, not prose"],
-  "check": ["W1-W8", "D1-D4", "D6-D11", "D14-D16", "S1-S7", "T1-T4", "U1-U5", "C1-C5"]
+  "check": ["W1-W8", "D1-D4", "D6-D11", "D14-D16", "S1-S7", "T1-T4", "U1-U5", "C1-C5", "L1-L5"]
 }
 ```
 
@@ -46,6 +46,7 @@ tensor = "tensor.md"           # the .tmap tensor map: every layer's object as n
 tensors = "ref/tensor.py"      # tmap1 maps §14; TensorFlow DataType codes; exact maps invert
 tune = "ref/tune.py"            # weight manipulation §15: training steps, state and adapter maps, LR rules
 deep = "ref/deep.py"            # deep1 composition §16: shallow webs into a deep net, interfaces hash-chained
+compose = "ref/compose.py"      # kline1 §17: composition functions recalled as K-lines, deep nets grown by induction
 ```
 
 ## Indications
@@ -73,6 +74,8 @@ deep = "ref/deep.py"            # deep1 composition §16: shallow webs into a de
 | **sequence root** | `sha256(ascii(seq))` | yes |
 | **chain root** | `sha256(salt \|\| ascii(seq))` with a 32-byte salt: Bases `root`, helix `sequence-root` | yes, with the salt |
 | **deep net** | an ordered list of webs, each stage reading the levels of the one before (§16) | yes |
+| **K-line** | a composition function: an ordered list of stage webs that extends any deep net whose last interface it reads, with the uses it was activated on (§17) | yes |
+| **utility** | PSNR (§6) to two decimals of a deep net's last interface against a target of the same shape (§17) | a measurement |
 | **fidelity** | PSNR in dB of a render against its pinned source media | a measurement, not a property of the bytes |
 
 ## §1 Flow
@@ -163,6 +166,7 @@ Agents match on codes, never on message text.
 | `kind_mismatch` | a tensor map of one kind is given where another kind is required, or a view map is asked to invert (§14) |
 | `bad_stage` | a deep1 composition has 0 or more than 64 stages, a stage's grid is not 256 per channel of the stage before, or a record names other stages than the webs given (§16) |
 | `bad_deep` | a deep1 record breaks the §16 grammar: header, stage count, numbering or fields (§16) |
+| `bad_kline` | a kline1 record breaks the §17 grammar: header, stage or use count, numbering, fields, or a use without one utility per prefix (§17) |
 | `no_gradients` | an optimizer step is asked for before any gradients were accumulated (§15) |
 
 ## §6 Fidelity
@@ -179,7 +183,7 @@ A web is already a tensor: for an `r = 2`, `H = 64`, `d = 3` image it is 4,547 n
 
 - Hidden units can be permuted without changing the render, so two webs of one image may differ only by a permutation. A reader must be permutation-invariant, or every web it reads must be fitted from the same initial weights (the reference encoder's `seed`).
 - Webs of different `H`, `r` or `d` have different shapes and are not comparable tensors.
-- Depth comes by composition, not by a deeper format: a deep net is an ordered list of webs (§16).
+- Depth comes by composition, not by a deeper format: a deep net is an ordered list of webs (§16), and a reusable run of stages is a K-line (§17).
 
 ## §8 Predicates
 
@@ -300,6 +304,7 @@ The stack is one primitive with layers over it. A **sequence** (§0) is the prim
 
 ```text { type: notebook.cell }
 web --deep1--> deep net                                             # stages composed, §16
+            deep net --kline1--> deeper net                         # a recalled composition function, §17
 media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two-way
                                    |--loop1-------> loop            # a view, one-way
                                    |--tess1------->  plan            # wetware-hq/tesseract
@@ -314,6 +319,7 @@ media --encode--> web --dna1--> sequence --pool1--> arr<oligo>      # bases, two
 | oligo pool | pool digest | `sha256` of the pool file, over the sequence root it rebuilds (§10) |
 | loop | head | the frame hash chain (§12) |
 | deep net | deep head | the stage hash chain over web roots and interface roots (§16) |
+| K-line | K-line head | the hash chain over its stage web roots only (§17) |
 | plan | plan root | `sha256` of the canonical `.tess` bytes (`wetware-hq/tesseract`) |
 | token | token id | the chain root and length it was minted with (`wetware-hq/bases`) |
 | page | locus root | the fold over a page's claims (`wetware-hq/helix`) |
@@ -364,6 +370,7 @@ root    := sha256(tmap), cited tmap1:<root>
 | `sequence` | `bases uint8 [nt]`, values `0-3` index `ACGT` | exact; one-hot is the view `tf.one_hot(bases, 4)` | web |
 | `pool` | `file uint8 []`, `oligos uint8 [m,117]` in pool order | exact; inverts to the `ref/dna.py pool` file | web |
 | `loop` | `chain uint8 [b+1,32]` (h_0 … head over b blocks), `kind uint8 [f]` (0 think, 1 hypothesis, 2 act, 3 observe), `verdict uint8 [f]` (0 none, 1 supports, 2 refutes) | view; `chain[-1]` is the §12 head | web |
+| `kline` | `chain uint8 [m+1,32]` (k_0 … head over m stages), `stages uint8 [m,32]` (stage web roots), `deeps uint8 [u,32]`, `targets uint8 [u,32]` and `supports bool [u]`, one row per use | view; `chain[-1]` is the §17 head | web |
 | `deep` | `chain uint8 [n+1,32]` (h_0 … head over n stages), `outs uint8 [n,32]` (interface roots), `webs uint8 [n,32]` (stage web roots) | view; `chain[-1]` is the §16 head | web |
 | `state` | `grid uint16 [r]`, `omega0 uint16 []`, `d_out uint8 []`, `step int64 []`, the trainable tensors `float32`, `m_*` and `v_*` `float32` (Adam's moments, one per trainable); the fit's plan: `learning_rate`, `beta1`, `beta2`, `eps`, `weight_decay`, `grad_clip_norm` `float64 []`, `schedule uint8 []` (0 constant, 1 linear), `total int64 []`, `batch int64 []`, `seed uint64 []`; with an adapter also `base uint8 [32]`, `rank uint16 []` and the base's six weights `float16` | exact; resumes a fit (§15) | web |
 | `adapter` | `base uint8 [32]` (the base web root), `<w>_down float16 [rows,k]` and `<w>_up float16 [k,cols]` for each patched `<w>` of `w1`, `w2`, `w3` | exact; merges into a new web (§15) | web |
@@ -447,6 +454,50 @@ record := "%deep1 stages=" n " grid=" grid(w_0) LF
 | C4 | the head is the §16 chain over each stage's web root and interface root, so changing any stage or any interface changes the head |
 | C5 | every refused record returns a §5 code and no head |
 
+## §17 K-lines `kline1`
+
+A **K-line** is a composition function over shallow webs: an ordered list of stage webs that, activated on any deep net whose last interface it reads, composes those stages after it (§16). It is Minsky's knowledge-line (`docs/recall-klines.md`): a handle that switches back on the set of agents, here stages, that solved a problem of this kind before. `ref/compose.py` is the reference; replay is normative.
+
+```text { type: notebook.cell }
+K(D)          = D ++ (s_0 .. s_(m-1))                                # a deep net D, extended by the K-line's stages
+requires        grid(s_0) = (256,) * d(D),  grid(s_i) = (256,) * d(s_(i-1))
+utility(D, t) = round(psnr(deep(D), t), 2) if shapes agree, else none  # §6; none is below every number
+k_0 = sha256("kline1"),  k_(i+1) = sha256(k_i || root(s_i))           # raw 32-byte values; head = k_m
+use           = (deep head of K(D), sha256(t), utility of D and of each prefix of K(D) past D)
+supports(use) = every utility in the use is above the one before it
+recalled(K)   = supports holds for uses on at least 2 different targets
+record := "%kline1 stages=" m " in=" d(D) " out=" d(s_(m-1)) " uses=" u LF
+          ("%stage " i " web=" root(s_i) " d=" d(s_i) LF) * m
+          "%head " k_m LF
+          ("%use " j " deep=" deep-head " target=" sha256(t) " utility=" u_0 "," … "," u_m LF) * u
+```
+
+```text { type: notebook.cell }
+grow(D, t, klines, library):                                          # induction on depth
+  loop at most 8 times:
+    candidates := every recalled K-line, then every library stage, whose first stage reads d(D)
+                  + a fitted curve, when d(D) = 1 and t has 1 channel
+    best       := the candidate of highest utility(D ++ candidate, t); ties go to the earlier one
+    if utility rises: D := D ++ best, else stop
+  return the stages added and the utility after each kept step
+```
+
+- **Induction.** The base is a deep net (one web is one, §16). The step adds a K-line or a stage only when it raises the objective, the utility of the output deep net, so every deep net `grow` returns is better than its start at every step, and `grow` stops at the first step that would not help. The stages it added are a new K-line, which counts only once it is replicated.
+- **A fitted curve.** On a one-channel interface the stage that best maps levels to the target is the mean target at each level (least squares; levels never taken are interpolated). `fit_curve` fits a rank-1 web (`H = 16`, `omega0 = 30`, 3,000 steps, seed 0) to that table on the 256-level grid, so a fitted stage is an ordinary web. The fit is one valid fit, like `encode`: replay decodes the committed stage, never refits it.
+- **Replication is the recall rule.** A K-line's head names its stages, not its evidence, so the K-line keeps one name as uses accumulate. A use records the utility after every stage, so a stage that did not help shows. `grow` activates only recalled K-lines, the rule `docs/recall-klines.md` applies to the stack's own moves: a composition that worked on one target is a result, one that worked on two is a method.
+- **Citizenship.** A stage is a web, so it has a sequence (§9) and can be a Bases chromosome; a K-line names its stages by web root and reaches a chromosome by token id, never by its chain root (§13, S3). A K-line holds roots and utilities, never a base (S4).
+- **Refuse, never guess.** A record off the grammar is `bad_kline`, a head that is not the chain over its stage lines is `bad_head`, a stage that does not read the interface before it is `bad_stage`, a web that is not the stage it is named for is `root_mismatch`, and a use that does not replay is `mismatch`.
+- **A view.** A record is regenerated from its stages, inputs and targets and never read back into a web (§13, S5).
+- **Sample.** The task is the BT.601 luma of a source (`compose.luma_target`), on two pinned sources: the astronaut and a 64 × 64 crop of scikit-image's coffee (`web.json` `webs`). `samples/luma.kline` is the K-line of the hand-set stage `samples/luma.web` (§16): it raises both targets, to 32.47 and 34.93 dB, so it is recalled. `grow` on the astronaut adds that stage, then a fitted curve, `samples/astronaut-64.curve.web` (656 bytes), to 32.55 dB, and stops. `samples/astronaut-64.luma-curve.kline` is those two stages: on the coffee the astronaut's curve lowers 34.93 to 34.42 dB, so that K-line is not recalled. `grow` on the coffee with `luma.kline` recalled takes it as its first step, then fits the coffee's own curve to 35.15 dB.
+
+| Id | Predicate |
+|---|---|
+| L1 | every record pinned in `web.json` `klines` replays byte for byte from its stages and uses, hashes to its pinned sha256 and head, and is recalled exactly when pinned so |
+| L2 | `K(D)` is `deep(D ++ stages)` (§16), and the head is the §17 chain over the stage web roots only, so changing a stage changes the head and adding a use does not |
+| L3 | `grow` keeps a step only when utility rises, and every kept step's utility is above the step before it |
+| L4 | `grow` activates no K-line that is not recalled |
+| L5 | every refused record returns a §5 code and no head |
+
 ## Citations
 
 - Universal approximation: Cybenko 1989, Hornik 1991 (`docs/pin-sources.md` §Theory).
@@ -457,6 +508,7 @@ record := "%deep1 stages=" n " grid=" grid(w_0) LF
 - Training API, checkpoints and LoRA heuristics: Tinker (`tinker-docs.thinkingmachines.ai`); LoRA, arXiv:2106.09685; AdamW, arXiv:1711.05101.
 - DNA storage and rotating code: Goldman et al. 2013; JPEG-DNA, arXiv:2103.09616 (`docs/pin-sources.md` §DNA).
 - Committed models and proofs of inference: ZKML, Chen et al., EuroSys 2024 (`docs/pin-sources.md` §Composition).
+- K-lines: Minsky, *K-Lines: A Theory of Memory*, Cognitive Science 4 (1980) 117–133; greedy layer-wise growth: Bengio et al., NeurIPS 2006 (`docs/pin-sources.md` §Composition).
 
 ## Falsification
 
@@ -468,6 +520,7 @@ record := "%deep1 stages=" n " grid=" grid(w_0) LF
 - `python ref/loop.py verify samples/astronaut-64.fa samples/astronaut-64.loop.txt` refuses, or prints a head other than `web.json`.
 - `python ref/tensor.py map web samples/astronaut-64.web out.tmap` writes bytes other than `samples/astronaut-64.web.tmap`, or `tf.io.parse_tensor` reads one of its records to another dtype, shape or value (§14).
 - `python ref/deep.py verify samples/astronaut-64.luma.deep samples/astronaut-64.web samples/luma.web` refuses, or prints a head other than `web.json` `composition` (§16).
+- `python ref/compose.py verify samples/luma.kline --stages samples/luma.web --use samples/astronaut-64.png samples/astronaut-64.web --use samples/coffee-64.png samples/coffee-64.web` refuses, or prints a head other than `web.json` `klines` (§17).
 - `python ref/tune.py merge samples/astronaut-64.web samples/astronaut-64.r8.adapter.tmap out.web` writes a web whose root is not `web.json` `tune` `merged` (§15).
 
 ## Licence
